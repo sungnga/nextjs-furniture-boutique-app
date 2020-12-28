@@ -1,0 +1,6 @@
+node_modules
+.next
+
+next.config.*
+now.json
+dist

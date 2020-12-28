@@ -1,0 +1,12 @@
+{
+  "name": "nextjs-furniture-boutique-app",
+  "version": "1.0.0",
+  "description": "Prevent, catch errors on client and server sides",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
