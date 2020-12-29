@@ -1,8 +1,16 @@
+import {Fragment} from 'react'
 import axios from 'axios';
+import ProductSummary from '../components/Product/ProductSummary'
+import ProductAttributes from '../components/Product/ProductAttributes'
 
 function Product({ product }) {
-	console.log(product);
-	return <p>product</p>;
+  // Spreading the product object as props using the object spread operator
+  return (
+    <Fragment>
+      <ProductSummary {...product} />
+      <ProductAttributes {...product} />
+    </Fragment>
+  )
 }
 
 // getInitialProps function automatically receives the context object as an argument

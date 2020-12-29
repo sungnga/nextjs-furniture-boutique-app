@@ -443,6 +443,93 @@
   };
   ```
 
+**2. Style Product Detail Page**
+- We will use three components to create and style the product detail page
+- In components/Product folder:
+  - ProductSummary.js - renders the AddProductToCart.js component
+  - ProductAttributes.js
+  - AddProductToCart.js
+- In pages/product.js file:
+  - The product route page renders the ProductSummary.js and ProductAttributes components
+  - Each component receives the product object as props
+  ```js
+  // Spreading the product object as props using the object spread operator
+  <Fragment>
+    <ProductSummary {...product} />
+    <ProductAttributes {...product} />
+  </Fragment>
+  ```
+- In components/Product/ProductSummary.js file:
+  - Destructure only the keys needed from the product object props
+  ```js
+  import { Item, Label } from 'semantic-ui-react';
+  import AddProductToCart from './AddProductToCart';
+
+  function ProductSummary({ _id, name, mediaUrl, sku, price }) {
+    return (
+      <Item.Group>
+        <Item>
+          <Item.Image size='medium' src={mediaUrl} />
+          <Item.Content>
+            <Item.Header>{name}</Item.Header>
+            <Item.Description>
+              <p>${price}</p>
+              <Label>SKU: {sku}</Label>
+            </Item.Description>
+            <Item.Extra>
+              <AddProductToCart productId={_id} />
+            </Item.Extra>
+          </Item.Content>
+        </Item>
+      </Item.Group>
+    );
+  }
+
+  export default ProductSummary;
+  ```
+- In components/Product/ProductAttributes.js file:
+  - Destructure only the keys needed from the product object props
+  ```js
+  import { Button, Header } from 'semantic-ui-react';
+
+  function ProductAttributes({ description }) {
+    return (
+      <>
+        <Header as='h3'>About this product</Header>
+        <p>{description}</p>
+        <Button
+          icon='trash alternate outline'
+          color='red'
+          content='Delete Product'
+        />
+      </>
+    );
+  }
+
+  export default ProductAttributes;
+  ```
+- In components/Product/AddProductToCart.js file:
+  ```js
+  import { Input } from 'semantic-ui-react';
+
+  function AddProductToCart(productId) {
+    return (
+      <Input
+        type='number'
+        min='1'
+        placeholder='Quantity'
+        value={1}
+        action={{
+          color: 'orange',
+          content: 'Add to Cart',
+          icon: 'plus cart'
+        }}
+      />
+    );
+  }
+
+  export default AddProductToCart;
+  ```
 
 
 
