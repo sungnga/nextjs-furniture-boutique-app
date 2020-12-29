@@ -1007,7 +1007,75 @@
     }
     ```
 
+**2. Structure Cart Page**
+- The cart page route consists of a section that displays a list of products in their shopping cart and a section that displays the subtotal and a checkout button
+- In pages/cart.js file:
+  - The cart route renders the CartItemList and CartSummary components
+  ```js
+  import { Segment } from 'semantic-ui-react';
+  import CartItemList from '../components/Cart/CartItemList';
+  import CartSummary from '../components/Cart/CartSummary';
 
+  function Cart() {
+    return (
+      <Segment>
+        <CartItemList />
+        <CartSummary />
+      </Segment>
+    );
+  }
+
+  export default Cart;
+  ```
+- In components/Cart/CartItemList.js file:
+  - Use Semantic UI to style this component
+  - If the shopping cart is empty and the user has signed in, show the View Product button
+  - If shopping cart is empty and user is not logged in, show the Login button
+  ```js
+  import { Header, Segment, Icon, Button } from 'semantic-ui-react';
+
+  function CartItemList() {
+    const user = false;
+
+    return (
+      <Segment secondary color='teal' inverted textAlign='center'>
+        <Header icon>
+          <Icon name='shopping basket' />
+          No products in your cart. Add some!
+        </Header>
+        <div>
+          {user ? (
+            <Button color='orange'>View Products</Button>
+          ) : (
+            <Button color='blue'>Login to Add Products</Button>
+          )}
+        </div>
+      </Segment>
+    );
+  }
+
+  export default CartItemList;
+  ```
+- In components/Cart/CartSummary.js file:
+  - Use Semantic UI to style this component
+  ```js
+  import { Fragment } from 'react';
+  import { Segment, Button, Divider } from 'semantic-ui-react';
+
+  function CartSummary() {
+    return (
+      <Fragment>
+        <Divider />
+        <Segment clearing size='large'>
+          <strong>Subtotal:</strong> $0.00
+          <Button icon='cart' color='teal' floated='right' content='Checkout' />
+        </Segment>
+      </Fragment>
+    );
+  }
+
+  export default CartSummary;
+  ```
 
 
 
