@@ -277,7 +277,81 @@
 - If we're successfully connected to MongoDB, we should be able to see "DB Connected" logged in the console
 - Lastly, add the next.config.js file to the .gitignore file
 
+**2. Create Products Collection, Model Product Data**
+- **Create products collection MongoDB by importing our static products data:**
+  - On MongoBD project dashboard page, click on the Command Line Tools menu item at the top
+  - In the Data Import and Export Tools section, copy the script for 'mongoimport'
+  - In the terminal at the root of the project, paste in the script and specify the collection information
+  - In our example, we want to import our static products json data into MongoDB Atlas
+  - We'll call our collection products, type is json, provide the path to the data file, and add the --jsonArray flag
+  - Use npx before the script
+  - `npx mongoimport --uri mongodb+srv://<USERNAME>:<PASSWORD>@furnitureboutique.pikdk.mongodb.net/<DATABASE> --collection products --type json --file ./static/products.json --jsonArray`
+  - If successful, we'll be able to see our products collection in MongoDB
+- **Model Product data:**
+  - We use Mongoose package to connect our application to the database. Now we will use Mongoose as ORM (Object Relational Mapper). It's a tool that's going to specify what each document must have for it to be added to a collection. What it must have in terms of properties and the corresponding data types and other conditions
+  - An alternative word for a model is a schema
+  - To create a Product model, we first need to define the product schema which contains the required fields and then call `mongoose.model()` to create a new model based on the schema we define
+  - In models/Product.js file:
+    - Use mongoose to create a new schema by using `new mongoose.Schema()`
+    - This method takes an object as an argument and on this object we can specify all of the fields that a given document must have
+    - The return result from this method we'll save to a variable ProductSchema
+    - We'll use the npm package shortid to generate unique ids
+    - Install shortid: `npm i shortid`
+    - Generate a unique id by calling `shortid.generate()`
+    - Call mongoose.model() method to create a new model
+      - 1st arg is the name of the model
+      - 2nd arg is the schema
+    - We also want to check if the Product model already exists in our connected database. If it does, use the existing model. If it doesn't, then create the Product model
+    ```js
+    import mongoose from 'mongoose';
+    import shortid from 'shortid';
 
+    const { String, Number } = mongoose.Schema.Types;
+
+    const ProductSchema = new mongoose.Schema({
+      name: {
+        type: String,
+        required: true
+      },
+      price: {
+        type: Number,
+        required: true
+      },
+      sku: {
+        type: String,
+        unique: true,
+        default: shortid.generate()
+      },
+      description: {
+        type: String,
+        required: true
+      },
+      mediaUrl: {
+        type: String,
+        required: true
+      }
+    });
+
+    export default mongoose.models.Product ||
+      mongoose.model('Product', ProductSchema);
+    ```
+- **Fetch Products From Mongo Database:**
+  - In pages/api/products.js file:
+    - Import the Product model and call the find() method on Product to retrieve the products from db
+    - This is an async operation, so make the route function an async function
+    ```js
+    import Product from '../../models/Product';
+    import connectDB from '../../utils/connectDb';
+
+    // Execute the connectDB function to connect to MongoDB
+    connectDB();
+
+    export default async (req, res) => {
+      const products = await Product.find();
+      res.status(200).json(products);
+    };
+    ```
+- Now when we make a request to `/api/products` endpoint, we should get back the products array coming from the MongoDB database
 
 
 
