@@ -554,7 +554,121 @@
   ```
 
 
+### ADDING CRUD FUNCTIONALITY, UPLOADING IMAGE FILES
+**1. Delete A Product Functionality**
+- When a user clicks on the Delete Product button, we want to display a modal asking the user to confirm the product deletion
+- The modal contains the cancel button and Delete button
+- To implement the modal functionality, we want to create a state for the modal to keep track of modal state in our application. We can use React useState() hook
+- When the Cancel button is clicked, we just want to close the modal, setting the modal state to false
+- When the Delete button is clicked, we want to make a delete API request to backend and delete the product based on id. Then redirect user to products index page
+- In components/Product/ProductAttributes.js file:
+  - Use Semantic UI Modal component to make the modal
+  - Use React useState() to create the modal state. Default value is set to false
+    - When the Delete Product button is clicked, set modal state to true
+    - When Cancel button is clicked, set modal state to false. This will close the modal
+  - Use useRouter hook from Next to redirect
+  - Write a handleDelete function that makes a delete API request using axios to delete the product based on id
+  ```js
+  import React, { Fragment, useState } from 'react';
+  import { useRouter } from 'next/router';
+  import { Button, Header, Modal } from 'semantic-ui-react';
+  import axios from 'axios';
+  import baseUrl from '../../utils/baseUrl';
 
+  function ProductAttributes({ description, _id }) {
+    const [modal, setModal] = useState(false);
+    const router = useRouter();
+
+    async function handleDelete() {
+      const url = `${baseUrl}/api/product`;
+      const payload = { params: { _id } };
+      await axios.delete(url, payload);
+      // redirect to home page after delete product
+      router.push('/');
+    }
+
+    return (
+      <Fragment>
+        <Header as='h3'>About this product</Header>
+        <p>{description}</p>
+        <Button
+          icon='trash alternate outline'
+          color='red'
+          content='Delete Product'
+          onClick={() => setModal(true)}
+        />
+        <Modal open={modal} dimmer='blurring'>
+          <Modal.Header>Confirm Delete</Modal.Header>
+          <Modal.Content>
+            <p>Are you sure you want to delete this product?</p>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button content='Cancel' onClick={() => setModal(false)} />
+            <Button
+              negative
+              icon='trash'
+              labelPosition='right'
+              content='Delete'
+              onClick={handleDelete}
+            />
+          </Modal.Actions>
+        </Modal>
+      </Fragment>
+    );
+  }
+
+  export default ProductAttributes;
+  ```
+- In pages/api/product.js file:
+  - In the api routes for product, we want to be able to handle different types of requests such as create, read, update, and delete
+  - For each request, we have access to the request and response objects. Using `req.method`, we can figure out what type of request it is
+  - And based on the type of request, we can write the appropriate type of route handler to handle the request
+  - We can use the switch statement to handle different types of requests
+  - For now, we have a get and delete requests of a product
+  ```js
+  import Product from '../../models/Product';
+
+  export default async (req, res) => {
+    switch (req.method) {
+      case 'GET':
+        await handleGetRequest(req, res);
+        break;
+      case 'DELETE':
+        await handleDeleteRequest(req, res);
+        break;
+      default:
+        res.status(405).send(`Method ${req.method} not allowed`); //405 means error with request
+        break;
+    }
+  };
+
+  async function handleGetRequest(req, res) {
+    const { _id } = req.query;
+    const product = await Product.findOne({ _id });
+    res.status(200).json(product);
+  }
+
+  async function handleDeleteRequest(req, res) {
+    const { _id } = req.query;
+    await Product.findOneAndDelete({ _id });
+    // status code 204 means success and no content is sent back
+    res.status(204).json({});
+  }
+  ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
 
 ## RESOURCES
