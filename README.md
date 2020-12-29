@@ -204,6 +204,78 @@
   - **Server-side Rendering:** The HTML is generated on **each request**. To make a page use Server-side Rendering, export `getServerSideProps`. Because Server-side Rendering results in slower performance than Static Generation, use this only if absolutely necessary
 
 
+### USING MONGODB WITH ATLAS
+**1. Configure Mongo Atlas, Connect to Database**
+- MongoDB Atlas: https://www.mongodb.com/cloud
+- Mongo Atlas is a cloud database service that can host our MongoDB database on a remote server
+- Once signed in to MongoDB Cloud, create a new project and choose the free tier. Name it FurnitureBoutique
+- Then create a new cluster and give the cluster a name: FurnitureBoutique
+- **Connecting the database to our application:**
+  - First, we want to whitelist our connection IP address
+    - From the project cluster dashboard, click on the Connect button
+    - We want to allow our IP address be accessed anywhere. This will prevent potential errors in the future when we deploy our app in production. Problems like database denying access to our application due to the IP address we're trying to connect from
+    - To do so, click on the Network Access on the left menu under Security. Then click the Allow Access From Anywhere button
+  - Second, create a root database user
+    - Create a user name and password
+  - Third step is choose a connection method
+    - Select the Connect your application option
+    - Then what we want is the srv string. Copy the path to the clipboard
+    - We just need to replace the username and password that we created for the root user earlier
+- **Connect to database:**
+  - In next.config.js file:
+    - All of our environment variables are stored in this file
+    - `MONGO_SRV: "<insert mongodb-srv path here>"`
+    - Replace the password and dbname
+    - Must restart the server
+  - In utils/connectDb.js file:
+    - In order to connect to the database we're going to use Mongoose package
+    - We use Mongoose quite a lot when working with database
+    - Install Mongoose: `npm i mongoose`
+    - Write a connectDB function that connects our application to the database
+    ```js
+    import mongoose from 'mongoose';
+
+    const connection = {};
+
+    // Connect to database
+    async function connectDB() {
+      // If there is already a connection to db, just return
+      // No need to make a new connection
+      if (connection.isConnected) {
+        // Use existing database connection
+        console.log('Using existing connection');
+        return;
+      }
+      // Use new database connection when connecting for 1st time
+      // 1st arg is the mongo-srv path that mongo generated for our db cluster
+      // The 2nd arg is options object. Theses are deprecation warnings
+      // mongoose.connect() returns a promise
+      // What we get back from this is a reference to our database
+      const db = await mongoose.connect(process.env.MONGO_SRV, {
+        useCreateIndex: true,
+        useFindAndModify: false,
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      });
+      console.log('DB Connected');
+      connection.isConnected = db.connections[0].readyState;
+    }
+
+    export default connectDB;
+    ```
+- **Call the connectDB function in routes:**
+  - Finally, import and execute the connectDB function in the request routes files which are in the pages/api folder
+  - Must restart the server
+  - For example, import and execute the function in pages/api/products.js file
+    - Execute the connectDB function at the very top and outside of the request route function
+    ```js
+    import connectDB from '../../utils/connectDb';
+
+    // Execute the connectDB function to connect to MongoDB
+    connectDB();
+    ```
+- If we're successfully connected to MongoDB, we should be able to see "DB Connected" logged in the console
+- Lastly, add the next.config.js file to the .gitignore file
 
 
 
@@ -219,3 +291,4 @@
 - next
 - semantic-ui-react
 - nprogress
+- mongoose
