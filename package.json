@@ -1,12 +1,25 @@
 {
   "name": "nextjs-furniture-boutique-app",
   "version": "1.0.0",
-  "description": "Prevent, catch errors on client and server sides",
+  "description": "An ecommerce web application built with Next.js and MERN stack",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next",
+    "start": "next start",
+    "build": "next build"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "mongoose": "^5.11.9",
+    "next": "^10.0.4",
+    "nprogress": "^0.2.0",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "semantic-ui-react": "^2.0.1",
+    "shortid": "^2.2.16",
+    "validator": "^13.5.2"
+  }
 }
