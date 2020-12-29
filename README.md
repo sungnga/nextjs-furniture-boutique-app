@@ -123,6 +123,85 @@
   };
   ```
 
+**2. Fetching Data on the Server with getInitialProps**
+- With client-side rendering, we would have to wait for the component to mount before we can fetch data. With Next.js, we can fetch data before the component mounts
+- We do this using Next's `getInitialProps` function
+  - This is an async function
+  - This function fetches data on a server
+  - Returns with the response data as an object
+  - We can pass this object as props to our component
+  - Also note that this object props will be merged with existing props
+- Now, in order to pass the response data object coming from an API request as props to a component, we need to setup the `<Component />` in our custom _app.js file to receive pageProps, data object made available as props prior to the component mounts 
+- In pages/_app.js file:
+  ```js
+  import App from 'next/app';
+  import Layout from '../components/_App/Layout';
+
+  class MyApp extends App {
+    static async getInitialProps({ Component, ctx }) {
+      let pageProps = {};
+
+      // first check to see if there exists an initial props of a given component
+      // if there is, execute the function that accepts context object as an argument
+      // this is an async operation
+      // assign the result to pageProps object
+      if (Component.getInitialProps) {
+        pageProps = await Component.getInitialProps(ctx);
+      }
+
+      return { pageProps };
+    }
+
+    // destructure pageProps objects that's returned from getInitialProps funct
+    // the <Component /> is the component of each page
+    // each page component now has access to the pageProps object
+    render() {
+      const { Component, pageProps } = this.props;
+      return (
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      );
+    }
+  }
+
+  export default MyApp;
+  ```
+- In pages/index.js file:
+  ```js
+  import React, { Fragment, useEffect } from 'react';
+  import axios from 'axios';
+
+  function Home({ products }) {
+    console.log(products);
+
+    return <Fragment>home</Fragment>;
+  }
+
+  // Fetch data and return response data as props object
+  // This props object can be passed to a component prior to the component mounts
+  // It's an async function
+  // NOTE: getServerSideProps does the same thing as getInitialProps function
+  export async function getServerSideProps() {
+    // fetch data on server
+    const url = 'http://localhost:3000/api/products';
+    const response = await axios.get(url);
+    // return response data as an object
+    // note: this object will be merged with existing props
+    return { props: { products: response.data } };
+  };
+
+  export default Home;
+  ```
+- **The getInitialProps method:**
+  - Docs: https://nextjs.org/docs/api-reference/data-fetching/getInitialProps
+  - `getInitialProps` enables server-side rendering in a page and allows you to do initial data population, it means sending the page with the data already populated from the server. This is especially useful for SEO
+  - NOTE: `getInitialProps` is deprecated. If using Next.js 9.3 or newer, it's recommended to use `getStaticProps` or `getServerSideProps` instead of `getInitialProps`
+  - These new data fetching methods allow you to have a granular choice between static generation and server-side rendering
+  - Static generation vs. server-side rendering: https://nextjs.org/docs/basic-features/pages
+- **Two forms of pre-rendering for Next.js:**
+  - **Static Generation (Recommended):** The HTML is generated at **build time** and will be reused on each request. To make a page use Static Generation, either export the page component, or export `getStaticProps` (and `getStaticPaths` if necessary). It's great for pages that can be pre-rendered ahead of a user's request. You can also use it with Client-side Rendering to bring in additional data
+  - **Server-side Rendering:** The HTML is generated on **each request**. To make a page use Server-side Rendering, export `getServerSideProps`. Because Server-side Rendering results in slower performance than Static Generation, use this only if absolutely necessary
 
 
 
