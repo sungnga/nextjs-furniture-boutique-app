@@ -403,6 +403,46 @@
   ```
 
 
+### FETCHING APP DATA FROM API
+**1. Get Product By Id**
+- When we click on a product, we want to direct user to the product detail page. We make an API request to get the product by its id
+- In Next.js, we're able to fetch data before the component mounts. So we can make use of Next's getInitialProps function to fetch the data
+- In pages/product.js file:
+  - getInitialProps function automatically receives the context object as an argument
+  - One of the properties in context object is query. We can use query string to get the product id to make the request
+  - This function returns the response data object which we can pass to our Product component as props
+  ```js
+  import axios from 'axios';
+
+  function Product({ product }) {
+    console.log(product);
+    return <p>product</p>;
+  }
+
+  Product.getInitialProps = async ({ query: { _id } }) => {
+    const url = 'http://localhost:3000/api/product';
+    const payload = { params: { _id } };
+    const response = await axios.get(url, payload);
+    return { product: response.data };
+  };
+
+  export default Product;
+  ```
+- Now let's create the API endpoint/route for the endpoint we defined in pages/product.js page
+- In pages/api/product.js file:
+  - Import the Product model and call the findOne() method on Product
+  - The findOne() method is like a filter method. We want to filter by the _id property
+  ```js
+  import Product from '../../models/Product';
+
+  export default async (req, res) => {
+    // req.query is an object
+    const { _id } = req.query;
+    const product = await Product.findOne({ _id });
+    res.status(200).json(product);
+  };
+  ```
+
 
 
 
