@@ -853,6 +853,159 @@
   ```
 
 
+### HANDLING ERRORS ON THE CLIENT AND SERVER
+**1. Prevent, Catch Errors on Client and Server Sides**
+- A general guideline when taking care of problems within our app is we want to try to prevent errors on the client side before they can take place on the server side
+- **Prevent users from submitting empty product input fields:**
+  - As the current state of our app it's possible to submit a product form without all its fields filled out and this would naturally cause an error on the server
+  - A solution is we can disable the Submit button if one of the fields is empty
+  - In pages/create.js file:
+    - Create a disabled state using useState() hook and set the default value to true
+      - Pass the disabled state to the disabled property of the Submit button. This will disable the button by default
+    - Then use useEffect() hook to update the `disabled` state when there's a change to the `product` state
+    - We want to check whether the input field is empty or not. Only when the fields are not empty will we enable the Submit button
+    ```js
+    // Disable the Submit button. By default, it's disabled
+    const [disabled, setDiasbled] = useState(true);
+    
+    // Whenever the product state changes, run the useEffect function
+    useEffect(() => {
+      // The Object.values() method returns an array of values of the object passed in
+      // The every() method takes a callback and loops through the values array
+      // For every element in every() method, call the Boolean method on it
+      // The Boolean method will return true or false if the element is empty or not
+      const isProduct = Object.values(product).every((el) => Boolean(el));
+      isProduct ? setDiasbled(false) : setDiasbled(true);
+    }, [product]);
+    
+    <Form.Field
+      control={Button}
+      disabled={disabled || loading}
+      color='blue'
+      icon='pencil alternate'
+      content='Submit'
+      type='submit'
+    />
+    ```
+- **Handle errors on client-side when making request to image upload and request to product endpoint:**
+  - A common pattern used to catch errors in asynchronous functions in executing promises is the try/catch block
+    - In the `try` block is the code we try to run
+    - In there's an error, the `catch` block can catch the error. The catch block automatically receives the error and we can decide what to do with the error
+    - In the `finally` block is where we want run a piece of code no matter what the outcome is
+  - There are different types of errors we might get back and instead of console logging the error, we can display an error message to the user
+  - Let's write a separate function that displays an error message based on the type of error returned from the promise
+  - In utils/catchErrors.js file:
+    ```js
+    // 1st arg is the error received from the catch block that gets passed down to this function
+    // 2nd arg is a callback function that receives the errorMsg as an argument
+    function catchErrors(error, displayError) {
+      let errorMsg;
+      if (error.response) {
+        // The request was made and the server response with a  status code
+        // that is not in the range of 2xx
+        errorMsg = error.response.data;
+        console.error('Error response', errorMsg);
+
+        // For Cloudingary image uploads
+        if (error.response.data.error) {
+          errorMsg = error.response.data.error.message;
+        }
+      } else if (error.request) {
+        // The request was made, but no response was received
+        errorMsg = error.request;
+        console.error('Error request', errorMsg);
+      } else {
+        // Something else happened in making the request that triggered an error
+        errorMsg = error.message;
+        console.error('Error message', errorMsg);
+      }
+      displayError(errorMsg);
+    }
+
+    export default catchErrors;
+    ```
+  - Then use the catchErrors function in the catch block in the handleSubmit function and display the error message to the user. This is handling errors when user submits a product form to create a new product
+  - In pages/create.js file:
+    - Create an error state and initialize its value to an empty string
+    - Use try/catch/finally block in the handleSubmit function
+    - Import and call the catchErrors function in the catch block
+    - Lastly, check error state to see if there's an error
+    - If there is, use Semantic UI Message component to render the error message in the Form component
+    ```js
+    import catchErrors from '../utils/catchErrors';
+
+    const [error, setError] = useState('');
+
+    async function handleSubmit(event) {
+      try {
+        event.preventDefault();
+        setLoading(true);
+        const mediaUrl = await handleImageUpload();
+        // console.log(mediaUrl)
+        const url = `${baseUrl}/api/product`;
+        const { name, price, description } = product;
+        // Triggering an error for testing
+        // const payload = { name: '', description, price, mediaUrl };
+        const payload = { name, description, price, mediaUrl };
+        const response = await axios.post(url, payload);
+        console.log(response);
+        // Clear the form input fields after submit
+        setProduct(INITIAL_PRODUCT);
+        // Show the success message
+        setSuccess(true);
+      } catch (error) {
+        // 1st arg is the error received from the promise
+        // 2nd arg is the function to update the error state
+        catchErrors(error, setError);
+        // console.error('ERROR!!', error)
+      } finally {
+        // At the end of handleSubmit, set loading state to false. Loading icon will go away
+        setLoading(false);
+      }
+    }
+    // Display the error message to the user
+    // Boolean(error) returns true or false. Error is the error state
+    <Form
+      loading={loading}
+      error={Boolean(error)}
+      success={success}
+      onSubmit={handleSubmit}
+    >
+      <Message error header='Oops!' content={error} />
+    </Form>
+    ```
+- **Handling errors on server side:**
+  - On the server side, we want to try to figure out all the potential causes of errors and give the client as much information to resolve the error on their own
+  - If there are some errors that we don't know about, we want to back a status code and a message about the error as well
+  - Use try/catch block in async functions to catch the error returned from the promise
+  - In pages/api/product.js file:
+    ```js
+    async function handlePostRequest(req, res) {
+      // The payload info sent on request by the client is accessible in req.body object
+      const { name, price, description, mediaUrl } = req.body;
+      try {
+        // Check to see if the value for all the input fields is provided
+        if (!name || !price || !description || !mediaUrl) {
+          // status code 422 means the user hasn't provided the necessary info
+          return res.status(422).send('Product missing one or more fields');
+        }
+        // Create a product instance from the Product model
+        const newProduct = await new Product({
+          name,
+          price,
+          description,
+          mediaUrl
+        });
+        // Save the product to db
+        newProduct.save();
+        // status code 201 means a resource is created
+        res.status(201).json(newProduct);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send('Server error in creating product');
+      }
+    }
+    ```
 
 
 

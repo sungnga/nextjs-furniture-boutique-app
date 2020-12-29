@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import {
 	Form,
 	Input,
@@ -18,12 +18,26 @@ const INITIAL_PRODUCT = {
 };
 import axios from 'axios';
 import baseUrl from '../utils/baseUrl';
+import catchErrors from '../utils/catchErrors';
 
 function CreateProduct() {
 	const [product, setProduct] = useState(INITIAL_PRODUCT);
 	const [mediaPreview, setMediaPreview] = useState('');
 	const [success, setSuccess] = useState(false);
 	const [loading, setLoading] = useState(false);
+	// Disable the Submit button. By default, it's disabled
+	const [disabled, setDiasbled] = useState(true);
+	const [error, setError] = useState('');
+
+	// Whenever the product state changes, run the useEffect function
+	useEffect(() => {
+		// The Object.values() method returns an array of values of the object passed in
+		// The every() method takes a callback and loops through the values array
+		// For every element in every() method, call the Boolean method on it
+		// The Boolean method will return true or false if the element is empty or not
+		const isProduct = Object.values(product).every((el) => Boolean(el));
+		isProduct ? setDiasbled(false) : setDiasbled(true);
+	}, [product]);
 
 	function handleChange(event) {
 		const { name, value, files } = event.target;
@@ -50,20 +64,31 @@ function CreateProduct() {
 	}
 
 	async function handleSubmit(event) {
-		event.preventDefault();
-		setLoading(true);
-		const mediaUrl = await handleImageUpload();
-		// console.log(mediaUrl)
-		const url = `${baseUrl}/api/product`;
-		const { name, price, description } = product;
-		const payload = { name, description, price, mediaUrl };
-		const response = await axios.post(url, payload);
-		console.log(response);
-		setLoading(false);
-		// Clear the form input fields after submit
-		setProduct(INITIAL_PRODUCT);
-		// Show the success message
-		setSuccess(true);
+		try {
+			event.preventDefault();
+			setLoading(true);
+			const mediaUrl = await handleImageUpload();
+			// console.log(mediaUrl)
+			const url = `${baseUrl}/api/product`;
+			const { name, price, description } = product;
+			// Triggering an error for testing
+			// const payload = { name: '', description, price, mediaUrl };
+			const payload = { name, description, price, mediaUrl };
+			const response = await axios.post(url, payload);
+			console.log(response);
+			// Clear the form input fields after submit
+			setProduct(INITIAL_PRODUCT);
+			// Show the success message
+			setSuccess(true);
+		} catch (error) {
+			// 1st arg is the error received from the promise
+			// 2nd arg is the function to update the error state
+			catchErrors(error, setError);
+			// console.error('ERROR!!', error)
+		} finally {
+			// At the end of handleSubmit, set loading state to false. Loading icon will go away
+			setLoading(false);
+		}
 	}
 
 	return (
@@ -72,7 +97,13 @@ function CreateProduct() {
 				<Icon name='add' color='orange' />
 				Create New Product
 			</Header>
-			<Form success={success} onSubmit={handleSubmit}>
+			<Form
+				onSubmit={handleSubmit}
+				loading={loading}
+				success={success}
+				error={Boolean(error)}
+			>
+				<Message error header='Oops!' content={error} />
 				<Message
 					success
 					icon='check'
@@ -120,6 +151,7 @@ function CreateProduct() {
 				/>
 				<Form.Field
 					control={Button}
+					disabled={disabled || loading}
 					color='blue'
 					icon='pencil alternate'
 					content='Submit'
