@@ -1,7 +1,7 @@
 # MY NOTES WHEN BUILDING THIS WEB APP
 
 ### PROJECT SETUP
-- Download starter project directory from https://github.com/reedbarger/react-reserve
+- Download the starter project directory from https://github.com/reedbarger/react-reserve
 - Install and update the project dependencies by running:
   - `npm install`
   - then `npm update`
@@ -74,6 +74,54 @@
 - Style the progress bar in static/nprogress.css file and include the stylesheet in Layout.js file
 
 
+### CREATING API WITH NODE + NEXT SERVER
+**1. Node + Next Server with API Routes**
+- In our home page in pages/index.js file, when the page loads (when the Home component mounts), we want to fetch the products with API and display them on the page
+- Whenever our application is interacting with the outside world, such as fetching data from the database, we can use React's useEffect() hook. Inside this hook, we can call a function that makes an API request
+- We will use axios, a tool to help make API requests
+- APIs, in the purest sense, are routes. And routes are simple functions. So in order to create routes, we create basic functions
+- In Next.js v.9 and newer, Next introduces API Routes. Any file (regular JS file) that is inside the `pages` directory Next.js will create a route for it. So we can create an api folder inside the `pages` directory that contains the route-name JS files and Next.js will automatically create the api routes for those files
+- For example, if we want to make a get request to '/api/products' endpoint, we can just create a products.js file inside the pages/api folder. Then in this products.js file, we can write a function that sends a response with the data back to the client
+- Another thing to note is that the port that the API request runs on is the same port that the client makes the request. By running on the same port, we can avoid CORS (cross-origin resource sharing) errors
+- In pages/index.js file:
+  - It's important that functions and components created inside pages directory is export default
+  ```js
+  import { Fragment, useEffect } from 'react';
+  import axios from 'axios';
+
+  function Home() {
+    // useEffect hook accepts 2 arguments
+    // 1st arg is the effect function
+    // Run code inside this function to interact w / outside world
+    // 2nd arg is dependencies array
+    useEffect(() => {
+      getProducts();
+    }, []);
+
+    // axios.get() method returns a promise
+    // so make the getProduct function an async function
+    // the response we get back is in response.data object
+    async function getProducts() {
+      const url = 'http://localhost:3000/api/products';
+      const res = await axios.get(url);
+      const { data } = res;
+    }
+
+    return <Fragment>home</Fragment>;
+  }
+
+  export default Home;
+  ```
+- In pages/api/products.js file:
+  - It's important that functions and components created inside pages directory is export default
+  - On every request made, we have access to the request(req) and response(res) objects
+  ```js
+  import products from '../../static/products.json';
+
+  export default (req, res) => {
+    res.status(200).json(products);
+  };
+  ```
 
 
 
