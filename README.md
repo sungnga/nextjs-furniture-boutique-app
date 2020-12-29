@@ -353,6 +353,60 @@
     ```
 - Now when we make a request to `/api/products` endpoint, we should get back the products array coming from the MongoDB database
 
+**3. Build Product Cards, Make Components Responsive**
+- Semantic UI Card: https://react.semantic-ui.com/views/card/
+- We'll use Semantic UI Card component to style the products on our home page
+- The pages/index.js file renders the ProductList.js component
+  - Pass the products array as props to ProductList component
+  ```js
+  import ProductList from '../components/Index/ProductList';
+
+  function Home({ products }) {
+    // console.log(products);
+    return <ProductList products={products} />;
+  }
+  ```
+- In components/Index/ProductList.js file
+  - Destructure the products props
+  - Write a mapProductsToItems function that maps over the products array and returns a new array of product objects
+    - This product object defines keys and values that we can use to render the product in the Semantic UI Card component
+  - In the Card component, specify the number of items per row
+  - Add the stackable attribute to the `<Card.Group />` component so the items will stack on top of each other on smaller size screens
+  - Do the same thing for the navbar menu items in Header.js component: `<Menu fluid inverted id='menu' stackable>`
+  ```js
+  import { Card } from 'semantic-ui-react';
+
+  function ProductList({ products }) {
+    function mapProductsToItems(products) {
+      return products.map((product) => ({
+        header: product.name,
+        image: product.mediaUrl,
+        meta: `$${product.price}`,
+        color: 'teal',
+        fluid: true,
+        childKey: product._id,
+        href: `/product?_id=${product._id}`
+      }));
+    }
+
+    return (
+      <Card.Group
+        stackable
+        itemsPerRow='3'
+        centered
+        items={mapProductsToItems(products)}
+      />
+    );
+  }
+
+  export default ProductList;
+  ```
+
+
+
+
+
+
 
 
 

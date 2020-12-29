@@ -23,7 +23,7 @@ function Header() {
 	}
 
 	return (
-		<Menu fluid inverted id='menu'>
+		<Menu fluid inverted id='menu' stackable>
 			<Container text>
 				<Link href='/'>
 					<Menu.Item header active={isActive('/')}>
