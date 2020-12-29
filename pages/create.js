@@ -16,11 +16,14 @@ const INITIAL_PRODUCT = {
 	media: '',
 	description: ''
 };
+import axios from 'axios';
+import baseUrl from '../utils/baseUrl';
 
 function CreateProduct() {
 	const [product, setProduct] = useState(INITIAL_PRODUCT);
 	const [mediaPreview, setMediaPreview] = useState('');
 	const [success, setSuccess] = useState(false);
+	const [loading, setLoading] = useState(false);
 
 	function handleChange(event) {
 		const { name, value, files } = event.target;
@@ -35,12 +38,31 @@ function CreateProduct() {
 		}
 	}
 
-	function handleSubmit(event) {
+	async function handleImageUpload() {
+		// Using form data constructor to get data from the form
+		const data = new FormData();
+		data.append('file', product.media);
+		data.append('upload_preset', 'furnitureboutique');
+		data.append('cloud_name', 'sungnga');
+		const response = await axios.post(process.env.CLOUDINARY_URL, data);
+		const mediaUrl = response.data.url;
+		return mediaUrl;
+	}
+
+	async function handleSubmit(event) {
 		event.preventDefault();
-		console.log(product);
-		// Empty the input fields after form submit
+		setLoading(true);
+		const mediaUrl = await handleImageUpload();
+		// console.log(mediaUrl)
+		const url = `${baseUrl}/api/product`;
+		const { name, price, description } = product;
+		const payload = { name, description, price, mediaUrl };
+		const response = await axios.post(url, payload);
+		console.log(response);
+		setLoading(false);
+		// Clear the form input fields after submit
 		setProduct(INITIAL_PRODUCT);
-		// Display the success message to the user
+		// Show the success message
 		setSuccess(true);
 	}
 

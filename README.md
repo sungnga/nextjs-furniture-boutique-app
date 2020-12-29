@@ -767,7 +767,90 @@
   export default CreateProduct;
   ```
 
+**3. Upload Product Image, Post Product**
+- **Create Cloudinary account, create upload preset:**
+  - Cloudinary website: https://cloudinary.com/
+  - Signup for a Cloudinary account
+  - On the Dashboard page, make note of the Cloud name and the API Base URL. We will need them
+  - We can specify image upload preset by going to Settings -> Upload tab
+  - Scroll down to the Upload presets section:
+    - Click the Add upload preset link
+    - Give the upload preset a name. We will use this name in our code
+    - Set the Signing Mode to Unsigned
+    - Specify the folder name. The images will be uploaded to this folder
+  - Select Upload Manipulations on the left menu:
+    - In Incoming Transformation section, click on Edit
+    - Here, we can change the size and quality of the image
+  - Don't forget to hit the Save button to save the preset
+- Creating a new product consists of two steps: 
+  - First, take the image file and upload it to Cloudinary media storage service. What we get back is the image URL that we can store in our database
+  - Second, take the image URL and the rest of product data stored in the state, make a request to an API endpoint to store the product in the database
+  - Then display the new product within our app
+- In pages/create.js file:
+  - When the form is submitting, we want to let the user know that their request is processing by showing a loading icon and disable the submit button
+  ```js
+  import axios from 'axios';
+  import baseUrl from '../utils/baseUrl';
 
+  const [loading, setLoading] = useState(false);
+
+  	async function handleImageUpload() {
+		// Using form data constructor to get data from the form
+		const data = new FormData();
+		data.append('file', product.media);
+		data.append('upload_preset', 'furnitureboutique');
+		data.append('cloud_name', 'sungnga');
+		const response = await axios.post(process.env.CLOUDINARY_URL, data);
+		const mediaUrl = response.data.url;
+		return mediaUrl;
+  }
+  
+  async function handleSubmit(event) {
+		event.preventDefault();
+		setLoading(true);
+		const mediaUrl = await handleImageUpload();
+		// console.log(mediaUrl)
+		const url = `${baseUrl}/api/product`;
+		const { name, price, description } = product;
+		const payload = { name, description, price, mediaUrl };
+		const response = await axios.post(url, payload);
+		console.log(response);
+		setLoading(false);
+		// Clear the form input fields after submit
+		setProduct(INITIAL_PRODUCT);
+		// Show the success message
+		setSuccess(true);
+	}
+  ```
+- In pages/api/product.js file:
+  - Before adding a product to db, make sure we're connected to the database
+  - Create a POST request route handler that adds a new product to the database
+  - Add a case for POST method and write a handlePostRequest method to handle the request
+  ```js
+  import connectDB from '../../utils/connectDb';
+
+  connectDB();
+
+  case 'POST':
+    await handlePostRequest(req, res);
+    break;
+
+  async function handlePostRequest(req, res) {
+    // The payload info sent on request by the client is accessible in req.body object
+    const { name, price, description, mediaUrl } = req.body;
+    // Check to see if the value for all the input fields is provided
+    if (!name || !price || !description || !mediaUrl) {
+      // status code 422 means the user hasn't provided the necessary info
+      return res.status(422).send('Product missing one or more fields');
+    }
+    // Create a product instance from the Product model
+    const newProduct = await new Product({ name, price, description, mediaUrl });
+    // Save the product to db
+    newProduct.save();
+    // status code 201 means a resource is created
+    res.status(201).json(newProduct);
+  }
+  ```
 
 
 
