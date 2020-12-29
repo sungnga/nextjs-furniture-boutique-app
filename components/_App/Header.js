@@ -1,7 +1,14 @@
 import { Fragment } from 'react';
 import { Menu, Container, Image, Icon } from 'semantic-ui-react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import Router, { useRouter } from 'next/router';
+import nProgress from 'nprogress';
+
+// When a route change starts, start the progress bar
+Router.onRouteChangeStart = () => nProgress.start();
+// When a route change ends, end the progress bar
+Router.onRouteChangeComplete = () => nProgress.done();
+Router.onRouteChangeError = () => nProgress.done();
 
 function Header() {
 	// When execute, it returns a router object

@@ -51,7 +51,27 @@
   }
   ```
 
+**3. Visualize Route Changes with Progress Bar**
+- It's always good to display to the users visually what's taking place within the application
+- We're going to display a progress bar when loading a new page or when fetching data
+- Install nprogress package: `npm i nprogress`
+- Next.js provides us with a `Router` object from `next/router`. In this object, we have access to when the route changes. We can write a function that starts the progress bar when the route changes, end the progress bar when route change is complete or encounter error
+- In Header.js file:
+  - Import the Router object from `next/router`
+  - Import nProgress
+  - Outside and above the Header component:
+    - write a function that starts the progress bar when route change starts
+    - Write a function that ends the progress bar when route change ends
+    - write a function that ends the progress bar when an error occurs during route change
+  ```js
+  import Router, { useRouter } from 'next/router';
+  import nProgress from 'nprogress';
 
+  Router.onRouteChangeStart = () => nProgress.start();
+  Router.onRouteChangeComplete = () => nProgress.done();
+  Router.onRouteChangeError = () => nProgress.done();
+  ```
+- Style the progress bar in static/nprogress.css file and include the stylesheet in Layout.js file
 
 
 
@@ -66,3 +86,9 @@
 ## RESOURCES
 - Next.js docs: https://nextjs.org/docs/getting-started
 - Semantic UI docs: https://react.semantic-ui.com/
+
+## NPM PACKAGES USED IN THIS PROJECT
+- react, react-dom
+- next
+- semantic-ui-react
+- nprogress
