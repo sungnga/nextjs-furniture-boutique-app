@@ -531,7 +531,27 @@
   export default AddProductToCart;
   ```
 
+**3. Base URL Helper**
+- When we fetch data in a development environment, we make request to `http:localhost:3000` on local server. And when we're in production, we're going to use the deployment URL
+- Let's write a base URL helper function that detects whether we're in a production or development environment. We can dynamically determine this whether that's the case or not with the help of a environment variable
+- In utils/baseUrl.js file:
+  ```js
+  const baseUrl =
+    process.env.NODE_ENV === 'production'
+      ? 'https://deployment-url.now.sh'
+      : 'http://localhost:3000';
 
+  export default baseUrl;
+  ```
+- Then wherever we use a URL to fetch data, we can replace the base URL with our baseUrl helper to generate the base URL dynamically
+- In pages/index.js and pages/product.js files:
+  - Import the baseUrl helper function
+  - For the url variable, use template literal and interpolate the baseUrl variable
+  ```js
+  import baseUrl from '../utils/baseUrl';
+
+  const url = `${baseUrl}/api/products`;
+  ```
 
 
 
