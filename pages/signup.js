@@ -35,12 +35,12 @@ function Signup() {
 			setError('');
 			// make request to signup user
 			const url = `${baseUrl}/api/signup`;
-			// Spread in the user data coming from user state
+			// Spread in user object, which comes from user state
 			const payload = { ...user };
 			// What's returned from the request is a token in response.data object
-      const response = await axios.post(url, payload);
-      // Set cookie in the browser
-      handleLogin(response.data);
+			const response = await axios.post(url, payload);
+			// Set cookie in the browser
+			handleLogin(response.data);
 		} catch (error) {
 			catchErrors(error, setError);
 		} finally {

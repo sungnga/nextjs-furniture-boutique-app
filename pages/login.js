@@ -1,7 +1,10 @@
 import { Fragment, useState, useEffect } from 'react';
 import { Button, Form, Icon, Message, Segment } from 'semantic-ui-react';
 import Link from 'next/link';
+import axios from 'axios';
+import baseUrl from '../utils/baseUrl';
 import catchErrors from '../utils/catchErrors';
+import { handleLogin } from '../utils/auth';
 
 const INITIAL_USER = {
 	email: '',
@@ -29,8 +32,14 @@ function Signup() {
 		try {
 			setLoading(true);
 			setError('');
-			console.log(user);
 			// make request to signup user
+			const url = `${baseUrl}/api/login`;
+			// Spread in use object, which comes from user state
+			const payload = { ...user };
+			// What's returned from the request is a token in response.data object
+			const response = await axios.post(url, payload);
+			// Set cookie in the browser
+			handleLogin(response.data);
 		} catch (error) {
 			catchErrors(error, setError);
 		} finally {

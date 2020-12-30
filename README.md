@@ -1139,7 +1139,7 @@
 **2. Model User, Signup User with JWT and Cookies**
 - When a user signs up by submitting the Signup form, we want to create a new user and store it in a users collection in the database. We want to create a User model that defines what a user document would look like
 - If a new user is successfully created, what's returned to the client from the server is a jsonwebtoken. We then use this token to set a cookie in the browser so that we can identify this client as an authenticated user
-- **Define signup user endpoint and make the request:**
+- **Client-side: make a request to signup user endpoint:**
   - In pages/signup.js file:
     - Import axios and baseUrl helper 
     - Call axios.post() method to make the request to signup user
@@ -1194,7 +1194,7 @@
 
     export default mongoose.models.User || mongoose.model('User', UserSchema);
     ```
-- **Create signup route handler to signup user with JWT:**
+- **Server-side: create signup route handler to signup user with JWT:**
   - In pages/api/signup.js file:
     - Import bcrypt package to hash user's password
     - Import connectDB to connect to our database
@@ -1259,7 +1259,8 @@
   - In pages/signup.js file:
     - Import the handleLogin helper function
     - Once we get the token back from the request, call the helper function and pass in the token as an argument
-    - This will get a cookie in the browser for this particular token
+    - This will set a cookie in the browser for this particular token
+    - Once handleSubmit is completed, a new user is successfully created, and a cookie is added to the browser, this helper function redirects user to the account page
     ```js
     import { handleLogin } from '../utils/auth';
 
@@ -1284,7 +1285,7 @@
     }
     ```
 
-**2. Validate POST Content on Server Side**
+**3. Validate POST Content on Server Side**
 - Right now users can enter anything they want in the input fields when they sign up. We want to set some constraints on the name, email, and password fields. We want to validate on the server side the values that are provided on the request body and then send an error back to the client and display it to users if it doesn't meet the conditions that we set
 - We're going to use a tool called validator to help us validate forms
 - Import validator: `npm i validator`
@@ -1303,8 +1304,95 @@
   }
   ```
 
+**4. Add Login Functionality**
+- **Client-side: make a request to login user endpoint**
+  - In pages/login.js file:
+    - Import axios and baseUrl helper 
+    - Call axios.post() method to make the request to login user
+    ```js
+    import axios from 'axios';
+    import baseUrl from '../utils/baseUrl';
 
+    const url = `${baseUrl}/api/login`;
+    // Spread in user object, which come from user state
+    const payload = { ...user };
+    // What's returned from the request is a token in response.data object
+    const response = await axios.post(url, payload);
+    ```
+- **Server-side: create login user route handler with JWT**
+  - In pages/api/login.js file:
+    - Use the try/catch block to handle the login user route request
+    ```js
+    import bcrypt from 'bcrypt';
+    import jwt from 'jsonwebtoken';
+    import connectDB from '../../utils/connectDb';
+    import User from '../../models/User';
 
+    // Connect to the database
+    connectDB();
+
+    export default async (req, res) => {
+      const { email, password } = req.body;
+      try {
+        // 1) Check to see if a user exists with the provided email
+        // In User schema, we exclude password by default
+        // But here, we want to select the password when finding a user in the db
+        const user = await User.findOne({ email }).select('+password');
+        // 2) --if not, return error
+        if (!user) {
+          return res.status(404).send('No user exists with that email');
+        }
+        // 3) Check to see if users' password matches the one in db
+        // 1st arg is the password the user provided
+        // 2nd arg is the password in the db
+        // returns true or false
+        const passwordsMatch = await bcrypt.compare(password, user.password);
+        // 4) --if so, generate a token
+        if (passwordsMatch) {
+          const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+            expiresIn: '7d'
+          });
+          res.status(200).json(token);
+        } else {
+          res.status(401).send('Passwords do not match'); //401 means not authenticated
+        }
+        // 5) Send that token to the client
+      } catch (error) {
+        console.error(error);
+        res.status(500).send('Error logging in user');
+      }
+    };
+    ```
+- **Store the JWT token in the browser as a cookie:**
+  - Once the client receives the token from the server, we want to use a function to put the token in our browser as a cookie that can be accessed on the client or server
+  - In pages/login.js file:
+    - Import the handleLogin helper function
+    - Once we get the token back from the request, call the helper function and pass in the token as an argument
+    - This will set a cookie in the browser for this particular token
+    - Once handleSubmit is completed, the user is successfully logged in, and a cookie is added to the browser, this helper function redirects user to the account page
+    ```js
+    import { handleLogin } from '../utils/auth';
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+      try {
+        setLoading(true);
+        setError('');
+        // make request to signup user
+        const url = `${baseUrl}/api/login`;
+        // Spread in use object, which comes from user state
+        const payload = { ...user };
+        // What's returned from the request is a token in response.data object
+        const response = await axios.post(url, payload);
+        // Set cookie in the browser
+        handleLogin(response.data);
+      } catch (error) {
+        catchErrors(error, setError);
+      } finally {
+        setLoading(false);
+      }
+    }
+    ```
 
 
 
