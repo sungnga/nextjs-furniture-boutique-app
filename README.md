@@ -1078,7 +1078,63 @@
   ```
 
 
+### AUTHENTICATING USERS WITH JWT + COOKIES
+**1. Build Login and Signup Forms**
+- Both the Login and Signup forms have very similar functionality as the Create New Product form
+- The Signup form has input fields of name, email, and password and a submit button
+- The Login form has input fields of name and password and a submit button
+- We use states using useEffect hooks to keep track of various aspects of the forms
+  - Create a user state to store the input values the user enters in the form
+  - Create a disabled state to disable the Submit button if the values for all fields are not provided
+  - Create a loading state to display a loading icon letting the user know that the form is processing
+  - Create an error state so that we can display an error message if something went wrong
+- In pages/signup.js file:
+  ```js
+  import { Fragment, useState, useEffect } from 'react';
+  import { Button, Form, Icon, Message, Segment } from 'semantic-ui-react';
+  import Link from 'next/link';
+  import catchErrors from '../utils/catchErrors';
 
+  const INITIAL_USER = {
+    name: '',
+    email: '',
+    password: ''
+  };
+
+  function Signup() {
+    const [user, setUser] = useState(INITIAL_USER);
+    const [disabled, setDisabled] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+      const isUser = Object.values(user).every((el) => Boolean(el));
+      isUser ? setDisabled(false) : setDisabled(true);
+    }, [user]);
+
+    function handleChange(event) {
+      const { name, value } = event.target;
+      setUser((prevState) => ({ ...prevState, [name]: value }));
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+      try {
+        setLoading(true);
+        setError('');
+        console.log(user);
+        // make request to signup user
+      } catch (error) {
+        catchErrors(error, setError);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    return (
+      //the rest of the code...
+    )
+  ```
 
 
 

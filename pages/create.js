@@ -66,7 +66,8 @@ function CreateProduct() {
 	async function handleSubmit(event) {
 		try {
 			event.preventDefault();
-			setLoading(true);
+      setLoading(true);
+      setError('');
 			const mediaUrl = await handleImageUpload();
 			// console.log(mediaUrl)
 			const url = `${baseUrl}/api/product`;
