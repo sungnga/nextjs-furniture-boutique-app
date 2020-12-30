@@ -1136,6 +1136,156 @@
     )
   ```
 
+**2. Model User, Signup User with JWT and Cookies**
+- When a user signs up by submitting the Signup form, we want to create a new user and store it in a users collection in the database. We want to create a User model that defines what a user document would look like
+- If a new user is successfully created, what's returned to the client from the server is a jsonwebtoken. We then use this token to set a cookie in the browser so that we can identify this client as an authenticated user
+- **Define signup user endpoint and make the request:**
+  - In pages/signup.js file:
+    - Import axios and baseUrl helper 
+    - Call axios.post() method to make the request to signup user
+      - 1st arg is the request endpoint
+      - 2nd arg is the payload which contains the user data
+      - This is an async operation
+    ```js
+    import axios from 'axios';
+    import baseUrl from '../utils/baseUrl';
+
+    // make request to signup user
+    const url = `${baseUrl}/api/signup`
+    // Spread in the user data coming from user state
+    const payload = { ...user }
+    // What's returned from the request is a token in response.data object
+    const response = await axios.post(url, payload)
+    ```
+- **Create User model:**
+  - In models/User.js file:
+    ```js
+    import mongoose from 'mongoose';
+
+    const { String } = mongoose.Schema.Types;
+
+    const UserSchema = new mongoose.Schema(
+      {
+        name: {
+          type: String,
+          required: true
+        },
+        email: {
+          type: String,
+          required: true,
+          unique: true
+        },
+        password: {
+          type: String,
+          required: true,
+          select: false
+        },
+        role: {
+          type: String,
+          required: true,
+          default: 'user',
+          enum: ['user', 'admin', 'root'] //the role field can only accept one of these three values
+        }
+      },
+      {
+        timestamps: true
+      }
+    );
+
+    export default mongoose.models.User || mongoose.model('User', UserSchema);
+    ```
+- **Create signup route handler to signup user with JWT:**
+  - In pages/api/signup.js file:
+    - Import bcrypt package to hash user's password
+    - Import connectDB to connect to our database
+    - Import User model to create a user instance
+    - Import jwt jsonwebtoken to generate a token
+    ```js
+    import bcrypt from 'bcrypt';
+    import jwt from 'jsonwebtoken';
+    import connectDB from '../../utils/connectDb';
+    import User from '../../models/User';
+
+    connectDB();
+
+    export default async (req, res) => {
+      const { name, email, password } = req.body;
+      try {
+        // 1) Check to see if the user already exists in the db
+        const user = await User.findOne({ email });
+        if (use) {
+          return res.status(422).send(`User already exist with email ${email}`);
+        }
+        // 2) --if not, hash their password
+        const hash = await bcrypt.hash(password, 10);
+        // 3) Create user
+        const newUser = await new User({
+          name,
+          email,
+          password: hash
+        });
+        newUser.save();
+        console.log(newUser);
+        // 4) Create token for the new user
+        // A token expires after a certain period of time
+        const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
+          expiresIn: '7d'
+        });
+        // 5) Send back token
+        res.status(201).json(token);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send('Error signup user. Please try again later');
+      }
+    };
+    ```
+- **Store the JWT token in the browser as a cookie:**
+  - Make a request to our signup endpoint -> get the token back on the client -> use a function to put the token in our browser as a cookie that can be accessed on the client or server
+  - In utils/auth.js file:
+    - Import js-cookie
+    - Write a handleLogin helper function that sets a cookie based on the given token
+    ```js
+    import cookie from 'js-cookie';
+    import Router from 'next/router';
+
+    export function handleLogin(token) {
+      // 1st arg is the key. We'll call it token
+      // 2nd arg is the value, the given token
+      cookie.set('token', token);
+      // Redirect to the account route
+      Router.push('/account');
+    }
+    ```
+  - In pages/signup.js file:
+    - Import the handleLogin helper function
+    - Once we get the token back from the request, call the helper function and pass in the token as an argument
+    - This will get a cookie in the browser for this particular token
+    ```js
+    import { handleLogin } from '../utils/auth';
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+      try {
+        setLoading(true);
+        setError('');
+        // make request to signup user
+        const url = `${baseUrl}/api/signup`;
+        // Spread in the user data coming from user state
+        const payload = { ...user };
+        // What's returned from the request is a token in response.data object
+        const response = await axios.post(url, payload);
+        // Set cookie in the browser
+        handleLogin(response.data);
+      } catch (error) {
+        catchErrors(error, setError);
+      } finally {
+        setLoading(false);
+      }
+    }
+    ```
+
+
+
 
 
 
@@ -1148,6 +1298,9 @@
 ## NPM PACKAGES USED IN THIS PROJECT
 - react, react-dom
 - next
-- semantic-ui-react
-- nprogress
-- mongoose
+- mongoose (interact with MongoDB Atlas)
+- semantic-ui-react (styling our app)
+- nprogress (progress bar)
+- bcrypt (hash password)
+- jsonwebtoken (generate a token for user)
+- js-cookie (generate a cookie)
