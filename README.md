@@ -1284,6 +1284,24 @@
     }
     ```
 
+**2. Validate POST Content on Server Side**
+- Right now users can enter anything they want in the input fields when they sign up. We want to set some constraints on the name, email, and password fields. We want to validate on the server side the values that are provided on the request body and then send an error back to the client and display it to users if it doesn't meet the conditions that we set
+- We're going to use a tool called validator to help us validate forms
+- Import validator: `npm i validator`
+- In pages/api/signup.js file:
+  - Add validation to name, email, and password
+  ```js
+  import isEmail from 'validator/lib/isEmail';
+  import isLength from 'validator/lib/isLength';
+
+  if (!isLength(name, { min: 3, max: 10 })) {
+    return res.status(422).send('Name must be 3-10 characters long');
+  } else if (!isLength(password, { min: 6 })) {
+    return res.status(422).send('Password must be at least 6 characters');
+  } else if (!isEmail(email)) {
+    return res.status(422).send('Email must be valid');
+  }
+  ```
 
 
 
