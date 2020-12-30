@@ -1394,6 +1394,58 @@
     }
     ```
 
+**5. Create User Cart Upon Signup**
+- After a user sign up and when we create a document for them in the database, we need to link the user document with a cart document in the database
+- So first we need to build a Cart model to define what a cart document has
+  - One of the fields of the cart document is the user field
+  - The value for this user field is the ObjectId of a user, a reference id to a user document in MongoDB
+  - Whenever a new document is created in a collection, Mongoose automatically generates a _id for it. We can use ObjectId to reference other documents in a given document. MongoDB then uses an action called populate on that id to expand the data into the document 
+  - So when we create a new cart document, we can associate a user document by its ObjectId
+- **Create a Cart model:**
+  - In models/Cart.js file:
+    ```js
+    import mongoose from 'mongoose';
+
+    const { ObjectId, Number } = mongoose.Schema.Types;
+
+    const CartSchema = new mongoose.Schema({
+      user: {
+        type: ObjectId,
+        ref: 'User' //referencing the User model
+      },
+      products: [
+        {
+          quantity: {
+            type: Number,
+            default: 1
+          },
+          product: {
+            type: ObjectId,
+            ref: 'Product' //referencing the Product model
+          }
+        }
+      ]
+    });
+
+    export default mongoose.models.Cart || mongoose.model('Cart', CartSchema);
+    ```
+ - **Create a cart for new user upon signup:**
+  - In pages/api/signup.js file:
+    - Import Cart model
+    - Before generating a token for the new user, create a cart for them. Save the new cart instance to the db
+    ```js
+    import Cart from '../../models/Cart';
+
+		const cart = await new Cart({ user: newUser._id });
+		cart.save();
+    ```
+- Now in MongoBD, when a new user document is created a cart document is also created that has a user field associated with the user ObjectId
+
+
+
+
+
+
 
 
 
