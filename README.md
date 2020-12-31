@@ -1984,7 +1984,7 @@
 **3. Style Cart Products**
 - Now that users can add products to their cart, we want to display a summary of those added products in their cart route/page with a list
 - In pages/cart.js file:
-  - Pass the user and product props down to the CartItemList child component
+  - Pass the user and products props down to the CartItemList child component
   - `<CartItemList user={user} products={products} />`
 - In components/Cart/CartItemList.js file:
   - If there's no product in user's cart, display the cart is empty with one of two buttons
@@ -2053,8 +2053,78 @@
   export default CartItemList;
   ```
 
+**4. Calculate Cart Total**
+- In pages/cart.js file:
+  - Pass the products props down to the CartSummary child component
+  - `<CartSummary products={products} />`
+- In components/Cart/CartSummary.js file:
+  - Import useState and useEffect hooks
+  - If the Subtotal is 0, we want to disable the Checkout button
+  - Create a state that keeps track whether the cart is empty or not. Call it isCartEmpty and initialize it to false
+  - Use useEffect() hook to keep track of changes in products array
+    - If the length of products array is equal to 0, set isCartEmpty state to true
+    - And this will disable the Checkout button
+  - Import the calculateCartTotal helper function
+  - Create states for cartAmount and stripeAmount. Set its initial value to 0
+  - Execute the calculateCartTotal helper function inside useEffect() hook because we want this function to run when products array changes
+    - Pass in the products array as an argument
+    - It returns an object of cartTotal and stripeTotal
+  - In the useEffect() hook, set the cartAmount and stripeAmount states to the cartTotal and stripeTotal respectively
+  - Render the total from cartAmount state in the Subtotal section
+  ```js
+  import { Fragment, useState, useEffect } from 'react';
+  import { Segment, Button, Divider } from 'semantic-ui-react';
+  import calculateCartTotal from '../../utils/calculateCartTotal';
 
+  function CartSummary({ products }) {
+    const [isCartEmpty, setIsCartEmpty] = useState(false);
+    const [cartAmount, setCartAmount] = useState(0);
+    const [stripeAmount, setStripeAmount] = useState(0);
 
+    useEffect(() => {
+      const { cartTotal, stripeTotal } = calculateCartTotal(products);
+      setCartAmount(cartTotal);
+      setStripeAmount(stripeTotal);
+      setIsCartEmpty(products.length === 0);
+    }, [products]);
+
+    return (
+      <Fragment>
+        <Divider />
+        <Segment clearing size='large'>
+          <strong>Subtotal:</strong> ${cartAmount}
+          <Button
+            icon='cart'
+            disabled={isCartEmpty}
+            color='teal'
+            floated='right'
+            content='Checkout'
+          />
+        </Segment>
+      </Fragment>
+    );
+  }
+
+  export default CartSummary;
+  ```
+- In utils/calculateCartTotal.js file:
+  - Write a calculateCartTotal helper function that adds up the total price of products in cart
+  ```js
+  function calculateCartTotal(products) {
+    const total = products.reduce((accum, el) => {
+      accum += el.product.price * el.quantity;
+      return accum;
+    }, 0);
+    // Trick to remove any rounding errors, multiply by 100 then divide by 100
+    // To make sure it rounds to two decimal places
+    const cartTotal = ((total * 100) / 100).toFixed(2);
+    const stripeTotal = Number((total * 100).toFixed(2));
+
+    return { cartTotal, stripeTotal };
+  }
+
+  export default calculateCartTotal;
+  ```
 
 
 
