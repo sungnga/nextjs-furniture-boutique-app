@@ -1981,6 +1981,81 @@
   }
   ```
 
+**3. Style Cart Products**
+- Now that users can add products to their cart, we want to display a summary of those added products in their cart route/page with a list
+- In pages/cart.js file:
+  - Pass the user and product props down to the CartItemList child component
+  - `<CartItemList user={user} products={products} />`
+- In components/Cart/CartItemList.js file:
+  - If there's no product in user's cart, display the cart is empty with one of two buttons
+    - If user is logged in, show the 'View Products' button
+    - If user is not logged in, show the 'Login to Purchase' button
+  - Write a mapCartProductsToItems function that maps over the products array and render each product
+    - For each product item, display the product name, quantity, price, product image, and a remove product button
+  - Since this is a function component, we can use useRouter() hook to redirect to other pages
+  ```js
+  import { Header, Segment, Icon, Button, Item } from 'semantic-ui-react';
+  import { useRouter } from 'next/router';
+
+  function CartItemList({ products, user }) {
+    const router = useRouter();
+
+    function mapCartProductsToItems(products) {
+      return products.map((p) => ({
+        childKey: p.product._id,
+        header: (
+          <Item.Header
+            as='a'
+            onClick={() => router.push(`/product?_id=${p.product._id}`)}
+          >
+            {p.product.name}
+          </Item.Header>
+        ),
+        image: p.product.mediaUrl,
+        meta: `${p.quantity} x $${p.product.price}`,
+        fluid: 'true',
+        extra: (
+          <Button
+            basic
+            icon='remove'
+            floated='right'
+            onClick={() => console.log(p.product._id)}
+          />
+        )
+      }));
+    }
+
+    if (products.length === 0) {
+      return (
+        <Segment secondary color='teal' inverted textAlign='center'>
+          <Header icon>
+            <Icon name='shopping basket' />
+            No products in your cart. Add some!
+          </Header>
+          <div>
+            {user ? (
+              <Button onClick={() => router.push('/')} color='orange'>
+                View Products
+              </Button>
+            ) : (
+              <Button onClick={() => router.push('/login')} color='blue'>
+                Login to Add Products
+              </Button>
+            )}
+          </div>
+        </Segment>
+      );
+    }
+
+    return <Item.Group divided items={mapCartProductsToItems(products)} />;
+  }
+
+  export default CartItemList;
+  ```
+
+
+
+
 
 
 
