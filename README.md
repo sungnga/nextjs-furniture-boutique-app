@@ -1728,8 +1728,83 @@
   ```
 
 
+### CART MANAGEMENT AND CHECKOUT
+**1. Fetch User Cart**
+- Let's fetch the user's cart in the database on the cart route. When the cart page loads, use getInitialProps function to make an api request to get cart data and display it on the cart page
+- In pages/cart.js file:
+  - Import parseCookies function, axios, and baseUrl helper
+  - First, get the user's token by calling parseCookies() method
+  - Then check to see if there's a token
+    - If there isn't, the user is not authenticated and we can return early
+    - Set the products to an empty array
+  - If there is a token, we can provide that token to make a request to backend to get the user's cart data
+    - Use getInitialProps function to make the request
+    - If it's successful, we get back a products array from cart object
+    - Return it as a products object
+  - Pass the products object as props to the Cart component
+  ```js
+  import { parseCookies } from 'nookies';
+  import axios from 'axios';
+  import baseUrl from '../utils/baseUrl';
 
+  function Cart({ products }) {
+    // console.log(products)
+    return (
+      <Segment>
+        <CartItemList />
+        <CartSummary />
+      </Segment>
+    );
+  }
 
+  Cart.getInitialProps = async (ctx) => {
+    // Destructure token property from the returned cookies object
+    const { token } = parseCookies(ctx);
+    // First check to see if user is authenticated
+    // --if not, set products to an empty array and return early
+    if (!token) {
+      return { products: [] };
+    }
+    const url = `${baseUrl}/api/cart`;
+    const payload = { headers: { Authorization: token } };
+    const response = await axios.get(url, payload);
+    return { products: response.data };
+  };
+
+  export default Cart;
+  ```
+- In pages/api/cart.js file:
+  - Create a user cart route handler that fetch cart data by userId and return to the client just the products array
+  ```js
+  import jwt from 'jsonwebtoken';
+  import connectDB from '../../utils/connectDb';
+  import Cart from '../../models/Cart';
+
+  connectDB();
+
+  export default async (req, res) => {
+    // Check if a token is provided with the request
+    if (!('authorization' in req.headers)) {
+      return res.status(401).send('No authorization token');
+    }
+    try {
+      // Verify the provided token
+      const { userId } = jwt.verify(
+        req.headers.authorization,
+        process.env.JWT_SECRET
+      );
+      const cart = await Cart.findOne({ user: userId }).populate({
+        path: 'products.product',
+        model: 'Product'
+      });
+      // Send back just the products array from cart
+      res.status(200).json(cart.products);
+    } catch (error) {
+      console.error(error);
+      res.status(403).send('Please login again');
+    }
+  };
+  ```
 
 
 
