@@ -1698,11 +1698,34 @@
   </Menu.Item>
   ```
 
+**5. Universal Logout Using LocalStorage**
+- When a user logs out of our application, we want to log them out everywhere, not just one browser window. We can perform a universal logout using localStorage
+- In utils/auth.js file:
+  - In the handleLogout function, store the key "logout" in localStorage
+  ```js
+  export function handleLogout() {
+    cookie.remove('token');
+    window.localStorage.setItem('logout', Date.now());
+    Router.push('/login');
+  }
+  ```
+- What this does is our custom App component(_app.js) is going to detect a change in localStorage
+- In pages/_app.js file:
+  - Use componentDidMount function to listen for event changes in localStorage
+  ```js
+  import Router from 'next/router';
 
-**4. Universal Logout Using LocalStorage**
+	componentDidMount() {
+		window.addEventListener('storage', this.syncLogout);
+	}
 
-
-
+	syncLogout = (event) => {
+    if (event.key === 'logout') {
+      // console.log('Logged out from storage')
+			Router.push('/login');
+		}
+	};
+  ```
 
 
 

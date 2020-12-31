@@ -4,6 +4,7 @@ import { parseCookies, destroyCookie } from 'nookies';
 import { redirectUser } from '../utils/auth';
 import axios from 'axios';
 import baseUrl from '../utils/baseUrl';
+import Router from 'next/router';
 
 // App component is executed on the server and is executed before anything else
 class MyApp extends App {
@@ -58,9 +59,19 @@ class MyApp extends App {
 			}
 		}
 
-		// console.log(pageProps.user)
 		return { pageProps };
 	}
+
+	componentDidMount() {
+		window.addEventListener('storage', this.syncLogout);
+	}
+
+	syncLogout = (event) => {
+		if (event.key === 'logout') {
+			// console.log('Logged out from storage')
+			Router.push('/login');
+		}
+	};
 
 	// destructure pageProps object that's returned from getInitialProps function
 	// the <Component /> is the component of each page
