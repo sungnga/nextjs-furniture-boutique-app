@@ -10,11 +10,11 @@ Router.onRouteChangeStart = () => nProgress.start();
 Router.onRouteChangeComplete = () => nProgress.done();
 Router.onRouteChangeError = () => nProgress.done();
 
-function Header() {
+function Header({user}) {
+	console.log(user);
 	// When execute, it returns a router object
 	const router = useRouter();
-	const user = false;
-
+  // const user = false
 	// Check if the given route matches with router.pathname
 	// router.pathname gives information about the route the user is on
 	function isActive(route) {

@@ -5,7 +5,7 @@ import { Container } from 'semantic-ui-react';
 import Header from './Header';
 import HeadContent from './HeadContent';
 
-function Layout({ children }) {
+function Layout({ children, user }) {
 	return (
 		<Fragment>
 			<Head>
@@ -19,7 +19,7 @@ function Layout({ children }) {
 				/>
 				<title>Furniture Boutique</title>
 			</Head>
-			<Header />
+			<Header user={user} />
 			<Container text style={{ paddingTop: '1em' }}>
 				{children}
 			</Container>

@@ -8,3 +8,19 @@ export function handleLogin(token) {
 	// Redirect to the account route
 	Router.push('/account');
 }
+
+// 1st arg is context object. Also have access to req and res objects of context
+// 2nd arg is the path to redirect to
+export function redirectUser(ctx, location) {
+	// If we have access to context, the request is on the server
+	// If we get a request on the server, redirect on the server
+	if (ctx.req) {
+		// Redirecting on the server with Node
+		ctx.res.writeHead(302, { Location: location });
+		// To stop writing to this response
+		ctx.res.end();
+	} else {
+		// Redirect on the client
+		Router.push(location);
+	}
+}

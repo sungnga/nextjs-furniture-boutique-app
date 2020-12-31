@@ -1429,7 +1429,7 @@
 
     export default mongoose.models.Cart || mongoose.model('Cart', CartSchema);
     ```
- - **Create a cart for new user upon signup:**
+- **Create a cart for new user upon signup:**
   - In pages/api/signup.js file:
     - Import Cart model
     - Before generating a token for the new user, create a cart for them. Save the new cart instance to the db
@@ -1440,6 +1440,169 @@
 		cart.save();
     ```
 - Now in MongoBD, when a new user document is created a cart document is also created that has a user field associated with the user ObjectId
+
+
+### AUTHORIZATION AND PROTECTING CONTENT
+**1. Get Current User from Token, Protect Auth Routes**
+- Install nookies: `npm i nookies`
+- Once a user signup or login to our application they can see different parts of the app depending on permission that they have
+- On our custom App page(_app.js file) we have a `getInitialProps` method that gets called for each of our page components. This App component is executed on the server and it's executed before anything else. The `getInitialProps` method in this custom App component gets executed for page change
+- So this is the ideal place to fetch our user's data with the token and pass it down to each of our page components and the page layout as props
+- **Client-side: get user's account data from token:**
+  - In pages/_app.js file:
+    - From the context object we're able to information about the request and response because the App component is being executed on the server
+    - And with that we'll be able to get all of the cookies
+    - We're going to use a package called nookies that's going to allow us to take the context object and get from it all of the cookies, so that we can use that to make a request to send back the user to our app
+    - Import the parseCookies function from nookies
+    - Call parseCookies() and pass in context object as an argument. What we get back is cookies object
+    - In this cookies object is the token property that we want. So we can destructure token from cookies
+    - So now after we execute `getInitialProps` for each page component, we can check to see if the current user has a token
+    - If no token, they are not an authenticated user. Hence they should not be able to access certain pages
+    - Write an if statement that checks if current user is unauthenticated (no token) and if they are on a protected route (such as /create or /account), redirect the user using the redirectUser helper function
+    - Import redirectUser helper function
+    - If current user is authenticated (with token), make a request to get the user's account data with the token
+      - Use the try/catch block since we're making a request to an end point
+      - The payload we provide is a little different. When it comes to providing a token, we're not going to pass it on a request body. If we need to provide a jsonwebtoken(jwt) for authorization, what we're providing is what's known as an authorization header
+      - So within the payload object, we're going to include an object call `headers`. This headers has a property called `Authorization` and it's going to be set to `token` that we're getting from cookies object
+      - Import axios and baseUrl helper
+      - Then specify a url and use axios to make a GET request
+      - If the request is successful, what we get back is the user object from the database. Assign this user to pageProps.user
+    - Pass the pageProps object as props to each page components and Layout component. Now every page routes has access to this user data
+    ```js
+    import { parseCookies } from 'nookies';
+    import { redirectUser } from '../utils/auth';
+    import axios from 'axios';
+    import baseUrl from '../utils/baseUrl';
+
+    // App component is executed on the server and is executed before anything else
+    class MyApp extends App {
+      // We have access to request and response from context object
+      static async getInitialProps({ Component, ctx }) {
+        // What's returned from parseCookies is cookies object
+        // Destructure the token property from it
+        const { token } = parseCookies(ctx);
+        let pageProps = {};
+
+        // first check to see if there exists an initial props of a given component
+        // if there is, execute the function that accepts context object as an argument
+        // this is an async operation
+        // assign the result to pageProps object
+        if (Component.getInitialProps) {
+          // Execute getInitalProps for each page component
+          pageProps = await Component.getInitialProps(ctx);
+        }
+
+        // Check to see if current user has a token
+        if (!token) {
+          const isProtectedRoute =
+            ctx.pathname === '/account' || ctx.pathname === '/create';
+          // If user is unauthenticated and is on a protected route, redirect user to login page
+          if (isProtectedRoute) {
+            redirectUser(ctx, '/login');
+          }
+        } else {
+          // Make a request to get the user's account data from token
+          try {
+            const payload = { headers: { Authorization: token } };
+            const url = `${baseUrl}/api/account`;
+            const response = await axios.get(url, payload);
+            const user = response.data;
+            // Pass the user to the  pageProps user object
+            // The pageProps will then pass to every page components and Layout component
+            pageProps.user = user;
+          } catch (error) {
+            console.error('Error getting current user', error);
+          }
+        }
+
+        // console.log(pageProps.user)
+        return { pageProps };
+      }
+
+      // destructure pageProps object that's returned from getInitialProps function
+      // the <Component /> is the component of each page
+      // each page component now has access to the pageProps object
+      render() {
+        const { Component, pageProps } = this.props;
+        return (
+          <Layout {...pageProps}>
+            <Component {...pageProps} />
+          </Layout>
+        );
+      }
+    }
+    ```
+  - In utils/auth.js file:
+    - Write a redirectUser helper function that redirects the user on the server or on client side
+      - This function accepts two arguments
+      - 1st arg is the context object. Also have access to req and res objects of context
+      - 2nd arg is the location - the path to redirect to
+    ```js
+    export function redirectUser(ctx, location) {
+      // If we have access to context, the request is on the server
+      // If we get a request on the server, redirect on the server
+      if (ctx.req) {
+        // Redirecting on the server with Node
+        ctx.res.writeHead(302, { Location: location });
+        // To stop writing to this response
+        ctx.res.end();
+      } else {
+        // Redirect on the client
+        Router.push(location);
+      }
+    }
+    ```
+- **Server-side: create user account route handler:**
+  - In pages/api/account.js file:
+    - Since we want to get a user, we're going to interact with the User model. Import User model
+    - Import connectDB helper since we need to connect to the db
+    - Import jwt
+    - First thing is check to see the authorization headers is provided with the request
+    - If there isn't, we want to return early. If there is, then we have a token that we can use to verify the user
+    - Use the jwt.verify() method to verify the provided token
+    ```js
+    import jwt from 'jsonwebtoken';
+    import User from '../../models/User';
+    import connectDB from '../../utils/connectDb';
+
+    connectDB();
+
+    export default async (req, res) => {
+      // Check if authorization headers is provided with the request
+      // If not, we want to return early`
+      if (!('authorization' in req.headers)) {
+        return res.status(401).send('No authorization token'); //401 means not permitted
+      }
+
+      try {
+        // jwt.verify() method verifies the token
+        // 1st arg is the provided token
+        // 2nd arg is the jwt secret which we use to sign the token
+        // what's returned is an object. Destructure the userId property from it
+        const { userId } = jwt.verify(
+          req.headers.authorization,
+          process.env.JWT_SECRET
+        );
+        // Use the returned userId to find a user in the database
+        const user = await User.findOne({ _id: userId });
+        if (user) {
+          // If user is found, return the user to the client
+          res.send(200).json(user);
+        } else {
+          res.status(404).send('User not found');
+        }
+      } catch (error) {
+        res.status(403).send('Invalid token'); //403 means forbidden action
+      }
+    };
+    ```
+- In components/_App/Layout.js component, receive and destructure the user props. Pass down the user props to the Header component
+- In components/_App/Header.js component, receive and destructure the user props
+- Now when an unauthenticated user tries to visit the /account or /create routes, they will be redirected to login page
+- If a user is successfully logged in, they will be able to see and access the Create and Account links in the navbar
+
+
+
 
 
 
@@ -1462,3 +1625,4 @@
 - bcrypt (hash password)
 - jsonwebtoken (generate a token for user)
 - js-cookie (generate a cookie)
+- nookies (get cookies)
