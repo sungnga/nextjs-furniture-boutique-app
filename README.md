@@ -1446,8 +1446,8 @@
 **1. Get Current User from Token, Protect Auth Routes**
 - Install nookies: `npm i nookies`
 - Once a user signup or login to our application they can see different parts of the app depending on permission that they have
-- On our custom App page(_app.js file) we have a `getInitialProps` method that gets called for each of our page components. This App component is executed on the server and it's executed before anything else. The `getInitialProps` method in this custom App component gets executed for page change
-- So this is the ideal place to fetch our user's data with the token and pass it down to each of our page components and the page layout as props
+- On our custom App page(_app.js file) we have a `getInitialProps` method that gets called for each of our page components. This App component is executed on the server and it's executed before anything else. The `getInitialProps` method in this custom App component gets executed when page changes
+- So this is the ideal place to fetch our user's data from token and pass it down to each of our page components and the page layout as props
 - **Client-side: get user's account data from token:**
   - In pages/_app.js file:
     - From the context object we're able to information about the request and response because the App component is being executed on the server
@@ -1460,9 +1460,9 @@
     - If no token, they are not an authenticated user. Hence they should not be able to access certain pages
     - Write an if statement that checks if current user is unauthenticated (no token) and if they are on a protected route (such as /create or /account), redirect the user using the redirectUser helper function
     - Import redirectUser helper function
-    - If current user is authenticated (with token), make a request to get the user's account data with the token
+    - If current user is authenticated (with token), make a request to get the user's account data from token
       - Use the try/catch block since we're making a request to an end point
-      - The payload we provide is a little different. When it comes to providing a token, we're not going to pass it on a request body. If we need to provide a jsonwebtoken(jwt) for authorization, what we're providing is what's known as an authorization header
+      - The payload we provide is a little different. When it comes to providing a token, we're not going to pass it on a request body. If we need to provide a jsonwebtoken(jwt) for authorization, what we're providing is what's known as an authorization headers
       - So within the payload object, we're going to include an object call `headers`. This headers has a property called `Authorization` and it's going to be set to `token` that we're getting from cookies object
       - Import axios and baseUrl helper
       - Then specify a url and use axios to make a GET request
@@ -1601,8 +1601,23 @@
 - Now when an unauthenticated user tries to visit the /account or /create routes, they will be redirected to login page
 - If a user is successfully logged in, they will be able to see and access the Create and Account links in the navbar
 
+**2. Handle Invalid Auth Tokens**
+- If the user's token has been expired or has been tampered with or somehow malfunctioned, we want to delete the invalid token and redirect user to login page so they can login again
+- In page/_app.js file:
+  - Import destroyCookie function from nookies
+  - In the catch block, call the destroyCookie method to delete the invalid token
+  - Then call the redirectUser helper method to redirect user to login page
+  ```js
+  import { parseCookies, destroyCookie } from 'nookies';
 
-
+  catch (error) {
+    console.error('Error getting current user', error);
+    // 1) Throw out invalid token
+    destroyCookie(ctx, 'token')
+    // 2) Redirect to login route
+    redirectUser(ctx, '/login')
+  }
+  ```
 
 
 
