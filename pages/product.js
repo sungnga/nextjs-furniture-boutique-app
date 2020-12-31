@@ -7,7 +7,7 @@ function Product({ product, user }) {
 	// Spreading the product object as props using the object spread operator
 	return (
 		<Fragment>
-			<ProductSummary {...product} />
+			<ProductSummary user={user} {...product} />
 			<ProductAttributes user={user} {...product} />
 		</Fragment>
 	);

@@ -1774,7 +1774,7 @@
   export default Cart;
   ```
 - In pages/api/cart.js file:
-  - Create a user cart route handler that fetch cart data by userId and return to the client just the products array
+  - Create a user cart route handler that fetch cart data based on userId and return to the client just the products array
   ```js
   import jwt from 'jsonwebtoken';
   import connectDB from '../../utils/connectDb';
@@ -1805,6 +1805,184 @@
     }
   };
   ```
+
+**2. Add Products to Cart Functionality**
+- **Implement functionality that allows user to add a product to cart:**
+- In components/Product/AddProductToCart.js file:
+  - Enable user to change quantity of the product
+  - Create a state for quantity and initialize its value to 1
+  - If user is not logged in, show the Sign Up to Purchase button
+    - When this button is clicked, it will direct user to signup page
+    - Use useRouter hook to re-route user to signup route
+  - If the user is logged in, show the Add to Cart button
+    - When this button is clicked, the handleAddProductToCart function is executed
+  - Write a handleAddProductToCart function that adds the product to the products array in carts collection in the database
+    - Since we're adding a product, use a PUT request with axios. And since this is an async operation, use try/catch block
+    - The payload we need to provide to this request is the quantity and productId
+    - We also want to provide the user's token as authorization headers
+      - We can get the token in cookie by calling the `cookie.get()` method
+  - Create a loading state that displays the loading icon when the product is being added to cart
+  - Create a success state and initialize it to false
+  - Once the product has been added to cart, set success state to true and display in the action button 'Item Added!'
+  - We only want to display this 'Item Added!' button (success state set to true) for about 3 seconds. Then make the 'Add to Cart' button visible again
+  - We can use React useEffect() hook to keep track of the success state
+    If success is set to true, after 3 seconds set success to false by calling setTimeout() method
+  ```js
+  import { useState, useEffect } from 'react';
+  import { Input } from 'semantic-ui-react';
+  import { useRouter } from 'next/router';
+  import axios from 'axios';
+  import baseUrl from '../../utils/baseUrl';
+  import catchErrors from '../../utils/catchErrors';
+  import cookie from 'js-cookie';
+
+  function AddProductToCart({ productId, user }) {
+    const [quantity, setQuantity] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+      let timeout;
+      if (success) {
+        timeout = setTimeout(() => setSuccess(false), 3000);
+      }
+      return () => {
+        // This is a global function
+        clearTimeout(timeout);
+      };
+    }, [success]);
+
+    async function handleAddProductToCart() {
+      try {
+        setLoading(true);
+        const url = `${baseUrl}/api/cart`;
+        const payload = { quantity, productId };
+        // Get the token from cookie
+        const token = cookie.get('token');
+        // Provide the token as auth headers
+        const headers = { headers: { Authorization: token } };
+        await axios.put(url, payload, headers);
+        setSuccess(true);
+      } catch (error) {
+        catchErrors(error, window.alert);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    return (
+      <Input
+        loading={loading}
+        onChange={(event) => setQuantity(Number(event.target.value))}
+        type='number'
+        min='1'
+        placeholder='Quantity'
+        value={quantity}
+        action={
+          user && success
+            ? {
+                color: 'blue',
+                content: 'Item Added!',
+                icon: 'plus cart',
+                disabled: true
+              }
+            : user
+            ? {
+                color: 'orange',
+                content: 'Add to Cart',
+                icon: 'plus cart',
+                loading,
+                disabled: loading,
+                onClick: handleAddProductToCart
+              }
+            : {
+                color: 'blue',
+                content: 'Sign Up to Purchase',
+                icon: 'signup',
+                onClick: () => router.push('/signup')
+              }
+        }
+      />
+    );
+  }
+
+  export default AddProductToCart;
+  ```
+- **Server-side: handle add product to cart route:**
+- In pages/api/cart.js file:
+  - Since we're handling different types of requests, use the switch statement
+  - Write a handlePutRequest function that adds the product to cart
+    - Use a try/catch block since this is an async function
+    - If product doesn't already exist in cart, add product to cart
+    - If product already exists in cart, update its quantity
+    - No need to send anything back to client
+  ```js
+  import mongoose from 'mongoose';
+  const { ObjectId } = mongoose.Types;
+
+  export default async (req, res) => {
+    switch (req.method) {
+      case 'GET':
+        await handleGetRequest(req, res);
+        break;
+      case 'PUT':
+        await handlePutRequest(req, res);
+        break;
+      default:
+        res.status(405).send(`Method ${req.method} not allowed`);
+        break;
+    }
+  };
+
+  async function handlePutRequest(req, res) {
+    const { productId, quantity } = req.body;
+
+    if (!('authorization' in req.headers)) {
+      return res.status(401).send('No authorization token');
+    }
+    try {
+      const { userId } = jwt.verify(
+        req.headers.authorization,
+        process.env.JWT_SECRET
+      );
+      // Get user cart based on userId
+      const cart = await Cart.findOne({ user: userId });
+      // Check if product already exists in cart
+      // Use mongoose's ObjectId() method to convert string productId to objectIds
+      // Returns true or false
+      const productExists = cart.products.some((doc) =>
+        ObjectId(productId).equals(doc.product)
+      );
+      // If so, increment quantity (by number provided to request)
+      // 1st arg is specifying what we want to update
+      // 2nd arg is how we want to update it
+      // In mongoDB $inc is the increment operator. The $ is the index in the array
+      // And then provide the path to the property we want to increment
+      if (productExists) {
+        await Cart.findOneAndUpdate(
+          { _id: cart._id, 'products.product': productId },
+          { $inc: { 'products.$.quantity': quantity } }
+        );
+      } else {
+        // If not, add new product with given quantity
+        // Use the $addToSet operator to ensure there won't be any duplicated product add
+        const newProduct = { quantity, product: productId };
+        await Cart.findOneAndUpdate(
+          { _id: cart._id },
+          { $addToSet: { products: newProduct } }
+        );
+      }
+      res.status(200).send('Cart updated');
+    } catch (error) {
+      console.error(error);
+      res.status(403).send('Please login again');
+    }
+  }
+  ```
+
+
+
 
 
 
