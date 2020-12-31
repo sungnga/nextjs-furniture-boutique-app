@@ -1619,6 +1619,64 @@
   }
   ```
 
+**3. Protect Admin Routes, Hide Protected Content**
+- Users may have permission to certain pages depending on their role. For example, a user with the role of "user" does not have permission to create a product. Only admin users and root users have permission to create route. So for regular users, the Create link in the navbar will be hidden
+- In page/_app.js file:
+  - If a user is not an admin or root user and is on /create route, redirect them to home page
+  ```js
+  const response = await axios.get(url, payload);
+  const user = response.data;
+  const isRoot = user.role === 'root';
+  const isAdmin = user.role === 'admin';
+  // If authenticated, but not of role 'admin' or 'root', redirect from '/create/' page
+  const isNotPermitted =
+    !(isRoot || isAdmin) && ctx.pathname === '/create';
+  if (isNotPermitted) {
+    redirectUser(ctx, '/');
+  }
+  ```
+- In components/_App/Header.js file:
+  - Only admin or root users get to see the Create link in Menu.Item navbar
+  ```js
+  const isRoot = user && user.role === 'root';
+  const isAdmin = user && user.role === 'admin';
+  const isRootOrAdmin = isRoot || isAdmin;
+
+  {isRootOrAdmin && (
+    <Link href='/create'>
+      <Menu.Item header active={isActive('/create')}>
+        <Icon name='add square' size='large' />
+        Create
+      </Menu.Item>
+    </Link>
+  )}
+  ```
+- Also, a regular user does not have permission to delete a product. So the Delete Product button will be hidden
+- In components/Product/ProductAttributes.js file
+  - Destructure user props which receives from the Product parent component
+  - Only reveal the Delete Product button and the Modal component to admin or root users
+  ```js
+  const isRoot = user && user.role === 'root';
+  const isAdmin = user && user.role === 'admin';
+  const isRootOrAdmin = isRoot || isAdmin;
+
+  {isRootOrAdmin && (
+    <Fragment>
+      <Button
+        icon='trash alternate outline'
+        color='red'
+        content='Delete Product'
+        onClick={() => setModal(true)}
+      />
+      <Modal open={modal} dimmer='blurring'>
+      ...
+  )}
+  ```
+
+
+
+
+
 
 
 

@@ -10,11 +10,13 @@ Router.onRouteChangeStart = () => nProgress.start();
 Router.onRouteChangeComplete = () => nProgress.done();
 Router.onRouteChangeError = () => nProgress.done();
 
-function Header({user}) {
-	console.log(user);
+function Header({ user }) {
 	// When execute, it returns a router object
 	const router = useRouter();
-  // const user = false
+	const isRoot = user && user.role === 'root';
+	const isAdmin = user && user.role === 'admin';
+	const isRootOrAdmin = isRoot || isAdmin;
+
 	// Check if the given route matches with router.pathname
 	// router.pathname gives information about the route the user is on
 	function isActive(route) {
@@ -43,7 +45,7 @@ function Header({user}) {
 					</Menu.Item>
 				</Link>
 
-				{user && (
+				{isRootOrAdmin && (
 					<Link href='/create'>
 						<Menu.Item header active={isActive('/create')}>
 							<Icon name='add square' size='large' />
