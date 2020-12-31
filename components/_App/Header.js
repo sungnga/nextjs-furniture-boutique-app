@@ -3,6 +3,7 @@ import { Menu, Container, Image, Icon } from 'semantic-ui-react';
 import Link from 'next/link';
 import Router, { useRouter } from 'next/router';
 import nProgress from 'nprogress';
+import { handleLogout } from '../../utils/auth';
 
 // When a route change starts, start the progress bar
 Router.onRouteChangeStart = () => nProgress.start();
@@ -63,7 +64,7 @@ function Header({ user }) {
 							</Menu.Item>
 						</Link>
 
-						<Menu.Item header>
+						<Menu.Item onClick={handleLogout} header>
 							<Icon name='sign out' size='large' />
 							Logout
 						</Menu.Item>

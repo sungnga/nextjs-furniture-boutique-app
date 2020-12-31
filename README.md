@@ -1673,7 +1673,33 @@
   )}
   ```
 
+**4. Logout User**
+- In utils/auth.js file:
+  - Write a handleLogout function that logs out a user
+  - Call the cookie.remove() method to remove the token from cookie
+  - Then redirect user to login route
+  ```js
+  import cookie from 'js-cookie';
 
+  export function handleLogout() {
+    cookie.remove('token');
+    Router.push('/login');
+  }
+  ```
+- In components/_App/Header.js file:
+  - Import the handleLogout function
+  - Execute the handleLogout function on onClick event for Logout button
+  ```js
+  import { handleLogout } from '../../utils/auth';
+
+  <Menu.Item onClick={handleLogout} header>
+    <Icon name='sign out' size='large' />
+    Logout
+  </Menu.Item>
+  ```
+
+
+**4. Universal Logout Using LocalStorage**
 
 
 
