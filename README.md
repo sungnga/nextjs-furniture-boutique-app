@@ -2126,6 +2126,89 @@
   export default calculateCartTotal;
   ```
 
+**5. Removing Cart Products**
+- To delete a product from cart, we need to make a delete request for our cart endpoint
+- In pages/cart.js file:
+  - Import cookie from js-cookie
+  - Create a cartProducts state that keeps track of the products in cart. Initialize it to products array
+  - Write a handleRemoveFromCart function that makes a request to delete a product in cart in the database based on productId
+    - This function accepts productId as an argument
+    - Make a DELETE request to the cart endpoint using axios
+    - The payload provided to the request has the productId and token
+    - Once we get back the response, call setCartProducts to update the cartProducts state
+  - We want to pass the products in cartProducts state as props to the CartItemList and CartSummary child components
+  - Pass down the handleRemoveFromCart function as props to CartItemList child component
+  ```js
+  import axios from 'axios';
+  import baseUrl from '../utils/baseUrl';
+  import cookie from 'js-cookie';
+
+  function Cart({ products, user }) {
+    const [cartProducts, setCartProducts] = useState(products);
+
+    async function handleRemoveFromCart(productId) {
+      const url = `${baseUrl}/api/cart`;
+      const token = cookie.get('token');
+      const payload = {
+        params: { productId },
+        headers: { Authorization: token }
+      };
+      const response = await axios.delete(url, payload);
+      setCartProducts(response.data);
+    }
+
+    return (
+      <Segment>
+        <CartItemList
+          handleRemoveFromCart={handleRemoveFromCart}
+          user={user}
+          products={cartProducts}
+        />
+        <CartSummary products={cartProducts} />
+      </Segment>
+    );
+  }
+  ```
+- In pages/api/cart.js file:
+  - Create a delete cart product route handler that deletes a product in cart based on productId
+  - Return the updated products array from carts collection to the client
+  ```js
+  case 'DELETE':
+    await handleDeleteRequest(req, res);
+    break;
+      
+  async function handleDeleteRequest(req, res) {
+    // Get productId from query string
+    const { productId } = req.query;
+
+    if (!('authorization' in req.headers)) {
+      return res.status(401).send('No authorization token');
+    }
+
+    try {
+      const { userId } = jwt.verify(
+        req.headers.authorization,
+        process.env.JWT_SECRET
+      );
+      const cart = await Cart.findOneAndUpdate(
+        { user: userId },
+        { $pull: { products: { product: productId } } },
+        { new: true }
+      ).populate({
+        path: 'products.product',
+        model: 'Product'
+      });
+      res.status(200).json(cart.products);
+    } catch (error) {
+      console.error(error);
+      res.status(403).send('Please login again');
+    }
+  }
+  ```
+- In components/Cart/CartItemList.js file:
+  - Destructure the handleRemoveFromCart function from Cart parent component
+  - When the Remove button is clicked, call the handleRemoveFromCart function and pass in the product id as an argument
+    - `onClick={() => handleRemoveFromCart(p.product._id)}`
 
 
 

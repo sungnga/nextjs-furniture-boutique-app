@@ -15,7 +15,7 @@ function AddProductToCart({ productId, user }) {
 	useEffect(() => {
 		let timeout;
 		if (success) {
-			timeout = setTimeout(() => setSuccess(false), 3000);
+			timeout = setTimeout(() => setSuccess(false), 2000);
 		}
 		return () => {
 			// This is a global function
