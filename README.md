@@ -2210,6 +2210,247 @@
   - When the Remove button is clicked, call the handleRemoveFromCart function and pass in the product id as an argument
     - `onClick={() => handleRemoveFromCart(p.product._id)}`
 
+**6. Checkout Customer Cart with Stripe Payment**
+- Install react-stripe-checkout and stripe: `npm i react-stripe-checkout stripe`
+- Now we want users to be able to checkout their cart. They will provide their email, shipping info, and payment info. Once that is done, Stripe is going to approve their purchase and we can show a success message and clear out their cart
+- **Setup Stripe account:**
+  - Signup for a Stripe account
+  - On the Dashboard page, click on Get your test API keys
+  - Copy the Publishable key and paste it into the stripeKey property in CartSummary.js file
+  - Copy the secret key and paste in the `STRIPE_SECRET_KEY` env variable in next.config.js file
+- **Client-side: make an api request to checkout cart with Stripe:**
+  - In pages/cart.js file:
+    - Import catchErrors helper function
+    - Create a success and loading states and initialize both to false
+    - Write a handleCheckout method that handles the payment
+      - This method takes paymentData as a parameter
+      - Use try/catch/finally block
+      - We're going to try to make an api request to /api/checkout endpoint
+      - It's a POST request method using axios and pass in the url, payload, and 
+      headers as arguments
+      - Once the payment process is completed, set the success state to true
+      - In handling errors, call the catchErrors method and display the error in alert window
+      - In finally block, set loading state back to false
+    - Show the loading spinner during the process of checking out the user's cart
+    - Pass down the cartProducts and the success states as props to the CartItemList child component
+    - Pass down the handleCheckout function and success state as props to the CartSummary child component
+    ```js
+    import cookie from 'js-cookie';
+    import axios from 'axios';
+    import baseUrl from '../utils/baseUrl';
+    import catchErrors from '../utils/catchErrors';
+
+    function Cart({ products, user }) {
+      const [cartProducts, setCartProducts] = useState(products);
+      const [success, setSuccess] = useState(false);
+      const [loading, setLoading] = useState(false);
+
+      async function handleCheckout(paymentData) {
+        try {
+          setLoading(true);
+          const url = `${baseUrl}/api/checkout`;
+          const token = cookie.get('token');
+          const payload = { paymentData };
+          const headers = { headers: { Authorization: token } };
+          await axios.post(url, payload, headers);
+          setSuccess(true);
+        } catch (error) {
+          catchErrors(error, window.alert);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      return (
+        <Segment loading={loading}>
+          <CartItemList
+            handleRemoveFromCart={handleRemoveFromCart}
+            user={user}
+            products={cartProducts}
+            success={success}
+          />
+          <CartSummary
+            products={cartProducts}
+            handleCheckout={handleCheckout}
+            success={success}
+          />
+        </Segment>
+      );
+    }
+    ```
+  - In components/Cart/CartSummary.js file:
+    - Import the StripeCheckout component from react-stripe-checkout
+    - Wrap the StripeCheckout component around the Checkout button
+      - Then provide the properties for the StripeCheckout component
+    - Destructure the handleCheckout and success props passed from Cart parent component
+    - When the Pay button is clicked, the handleCheckout method is executed in the cart page route
+      - This is done by setting the token property to handleCheckout: `token={handleCheckout}`
+    - Disable the Checkout button after a successful purchase
+    ```js
+    import StripeCheckout from 'react-stripe-checkout';
+
+    <StripeCheckout
+      name='Furniture Boutique'
+      amount={stripeAmount}
+      image={products.length > 0 ? products[0].product.mediaUrl : ''}
+      currency='USD'
+      shippingAddress={true}
+      billingAddress={true}
+      zipCode={true}
+      stripeKey='stripe-publishable-key'
+      token={handleCheckout}
+      triggerEvent='onClick'
+    >
+      <Button
+        icon='cart'
+        disabled={isCartEmpty || success}
+        color='teal'
+        floated='right'
+        content='Checkout'
+      />
+    </StripeCheckout>
+    ```
+  - In components/Cart/CartItemList.js file:
+    - Destructure the success props passed from Cart parent component
+    - Write an if statement that checks if success state is true
+      - If it is, render a success message to user
+    ```js
+    if (success) {
+      return (
+        <Message
+          success
+          header='Success!'
+          content='Your order and payment has been accepted'
+          icon='star outline'
+        />
+      );
+    }
+    ```
+- **Server-side: create cart checkout route handler:**
+  - In pages/api/checkout.js file:
+    ```js
+    import Stripe from 'stripe';
+    import { v4 as uuidv4 } from 'uuid';
+    import jwt from 'jsonwebtoken';
+    import Cart from '../../models/Cart';
+    import Order from '../../models/Order';
+    import calculateCartTotal from '../../utils/calculateCartTotal';
+
+    const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+    export default async (req, res) => {
+      const { paymentData } = req.body;
+
+      try {
+        // 1) Verify and get user id from token
+        const { userId } = jwt.verify(
+          req.headers.authorization,
+          process.env.JWT_SECRET
+        );
+        // 2) Find cart based on user id, populate it
+        const cart = await Cart.findOne({ user: userId }).populate({
+          path: 'products.product',
+          model: 'Product'
+        });
+        // 3) Calculate cart totals again from cart products
+        const { cartTotal, stripeTotal } = calculateCartTotal(cart.products);
+        // 4) Get email from payment data, see if email linked with existing Stripe customer
+        const prevCustomer = await stripe.customers.list({
+          email: paymentData.email,
+          limit: 1
+        });
+        const isExistingCustomer = prevCustomer.data.length > 0;
+        // 5) If not existing customer, create them based on their email
+        let newCustomer;
+        if (!isExistingCustomer) {
+          newCustomer = await stripe.customers.create({
+            email: paymentData.email,
+            source: paymentData.id
+          });
+        }
+        const customer =
+          (isExistingCustomer && prevCustomer.data[0].id) || newCustomer.id;
+        // 6) Create charge with total, send receipt email
+        const charge = await stripe.charges.create(
+          {
+            currency: 'usd',
+            amount: stripeTotal,
+            receipt_email: paymentData.email,
+            customer,
+            description: `Checkout | ${paymentData.email} | ${paymentData.id}`
+          },
+          {
+            idempotencyKey: uuidv4()
+          }
+        );
+        // 7) Add order data to database
+        await new Order({
+          user: userId,
+          email: paymentData.email,
+          total: cartTotal,
+          products: cart.products
+        }).save();
+        // 8) Clear products in cart
+        await Cart.findOneAndUpdate({ _id: cart._id }, { $set: { products: [] } });
+        // 9) Send back success (200) response
+        res.status(200).send('Checkout successful');
+      } catch (error) {
+        console.error(error);
+        res.status(500).send('Error processing charge');
+      }
+    };
+    ```
+- **Define Order Model:**
+  - The Order model is similar to the Cart model except it also includes the email and total fields and a timestamps for when the order was created
+  - In models/Order.js file:
+    ```js
+    import mongoose from 'mongoose';
+
+    const { ObjectId, Number } = mongoose.Schema.Types;
+
+    const OrderSchema = new mongoose.Schema(
+      {
+        user: {
+          type: ObjectId,
+          ref: 'User' //referencing the User model
+        },
+        products: [
+          {
+            quantity: {
+              type: Number,
+              default: 1
+            },
+            product: {
+              type: ObjectId,
+              ref: 'Product' //referencing the Product model
+            }
+          }
+        ],
+        email: {
+          type: String,
+          required: true
+        },
+        total: {
+          type: Number,
+          required: true
+        }
+      },
+      {
+        timestamps: true
+      }
+    );
+
+    export default mongoose.models.Order || mongoose.model('Order', OrderSchema);
+    ```
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2218,6 +2459,7 @@
 ## RESOURCES
 - Next.js docs: https://nextjs.org/docs/getting-started
 - Semantic UI docs: https://react.semantic-ui.com/
+- Stripe docs: https://stripe.com/docs/payments/checkout/migration
 
 ## NPM PACKAGES USED IN THIS PROJECT
 - react, react-dom
@@ -2229,3 +2471,4 @@
 - jsonwebtoken (generate a token for user)
 - js-cookie (generate a cookie)
 - nookies (get cookies)
+- npm i react-stripe-checkout (checkout with stripe)
