@@ -5,7 +5,7 @@ function ProductList({ products }) {
 		return products.map((product) => ({
 			header: product.name,
 			image: product.mediaUrl,
-			meta: `$${product.price}`,
+			meta: `$${(product.price).toFixed(2)}`,
 			color: 'teal',
 			fluid: true,
 			childKey: product._id,

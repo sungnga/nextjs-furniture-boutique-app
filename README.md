@@ -2444,9 +2444,106 @@
     ```
 
 
+### PAGINATION AND MANAGING USER ROLES
+**1. Add Pagination for Product List**
+- Let's divide up our product list into multiple pages instead of having them all in a single page
+- **Client-side: make request to /products endpoint with page query params**
+  - In pages/index.js file:
+    - Instead of making a request to /api/products endpoint, we want to configure our request on a query string with page information. For example, fetch products of page 2 or page 3, etc.
+    - To access the query string in a request, the getInitialProps function automatically receives context object as an argument. In context, there's a query property that we can use to include query string
+    - Create a payload object that contains the query string params of page and size
+    - Pass the payload object along with the url as args to the axios GET request method
+    - The response.data object that comes back contains the products array and totalPage
+    - In the Home component, destructure the products and totalPage props
+    - Import the ProductPagination component and render this component on the Home component
+    - Pass the totalPages as props to the ProductPagination child component
+    ```js
+    import ProductPagination from '../components/Index/ProductPagination';
 
+    // Destructure products and totalPages props from getServerSideProps function
+    function Home({ products, totalPages }) {
+      return (
+        <Fragment>
+          <ProductList products={products} />
+          <ProductPagination totalPages={totalPages} />
+        </Fragment>
+      );
+    }
 
+    export async function getServerSideProps(ctx) {
+      // console.log(ctx.query)
+      // Check to see if page query is available
+      const page = ctx.query.page ? '' : '1';
+      // size is the number of products on a page
+      const size = 9;
+      // fetch data on server
+      const url = `${baseUrl}/api/products`;
+      // params is query string params
+      const payload = { params: { page, size } };
+      const response = await axios.get(url, payload);
+      // The return response.data object contains products array and totalPages
+      // note: this object will be merged with existing props
+      return { props: response.data };
+    }
+    ```
+  - In components/Index/ProductPagination.js file:
+    - Import useRouter hook from next/router
+    - Destructure totalPages props received from Home parent component
+    - Use Semantic UI Pagination component to render the pagination
+    - Use Next's router to redirect to activePage
+    ```js
+    import { useRouter } from 'next/router';
+    import { Container, Pagination } from 'semantic-ui-react';
 
+    function ProductPagination({ totalPages }) {
+      const router = useRouter();
+
+      return (
+        <Container textAlign='center' style={{ margin: '2em' }}>
+          <Pagination
+            defaultActivePage={1}
+            totalPages={totalPages}
+            onPageChange={(event, data) => {
+              // console.log(data)
+              data.activePage === 1
+                ? router.push('/')
+                : router.push(`/?page=${data.activePage}`);
+            }}
+          />
+        </Container>
+      );
+    }
+
+    export default ProductPagination;
+    ```
+- **Server-side: Create route handler to products with page query endpoint:**
+  - In pages/api/products.js file:
+    - Destructure page and size query string params from req.query
+    - Note that these params received in string format. We need to convert them into numbers
+    - We want to fetch products based on pageNum on the query string and the number of product on a page based on pageSize
+    - We also want to know the totalDocs(products) in the products collection by calling the Product.countDocuments() method on Product
+    - We use that to calculate the totalPages
+    - Finally, we return the products array based on the page string query and the totalPages to the client
+    ```js
+    export default async (req, res) => {
+      const { page, size } = req.query;
+      // Convert query string values to numbers
+      const pageNum = Number(page);
+      const pageSize = Number(size);
+      let products = [];
+      const totalDocs = await Product.countDocuments();
+      const totalPages = Math.ceil(totalDocs / pageSize);
+      if (pageNum === 1) {
+        // limit the number of products getting back from db by pageSize
+        products = await Product.find().limit(pageSize);
+      } else {
+        const skips = pageSize * (pageNum - 1) * -1;
+        products = await Product.find().skip(skips).limit(pageSize);
+      }
+      // const products = await Product.find();
+      res.status(200).json({ products, totalPages });
+    };
+    ```
 
 
 
