@@ -2545,9 +2545,215 @@
     };
     ```
 
+**2. Create Account Header, Order History**
+- The account route/page displays the user's account header (their name, email, joined date), order history, and user permissions
+- **Client-side: make request to /orders endpoint to get orders data:**
+- In pages/account.js file:
+  - The Account component renders the AccountHeader and AccountOrders components. Import of these child components
+  - All components in our application have access to user props because of our custom App component
+  - Use the spread object operator to spread the user properties to the AccountHeader child component
+  - Next, we want to populate the user's order history on the account page when the account route loads
+  - Call the getInitialProps function to make a request to fetch orders data.
+    - Import parseCookies function from nookies
+    - Call parseCookies() function to get the token from cookie
+    - We'll send the headers authorization of the token as a payload object
+    - The request endpoint we want to make is /api/orders
+    - We'll make a GET request with axios and pass in the url and payload
+    - What we get back from the response.data object is the orders object props
+  - In the Account component, receive and destructure the orders props
+  - Pass the orders as props to the AccountOrders child component. This way, it can render the orders
+  ```js
+  import { Fragment } from 'react';
+  import AccountHeader from '../components/Account/AccountHeader';
+  import AccountOrders from '../components/Account/AccountOrders';
+  import axios from 'axios';
+  import baseUrl from '../utils/baseUrl';
+  import { parseCookies } from 'nookies';
 
+  function Account({ user, orders }) {
+    return (
+      <Fragment>
+        <AccountHeader {...user} />
+        <AccountOrders orders={orders} />
+      </Fragment>
+    );
+  }
 
+  Account.getInitialProps = async (ctx) => {
+    const { token } = parseCookies(ctx);
+    if (!token) {
+      return { orders: [] };
+    }
+    const payload = { headers: { Authorization: token } };
+    const url = `${baseUrl}/api/orders`;
+    const response = await axios.get(url, payload);
+    // The response.data object contains orders object props
+    return response.data;
+  };
+  export default Account;
+  ```
+- In components/Account/AccountHeader.js file:
+  - Destructure role, name, email, and createdAt properties of user object props
+  - Display the user's name, email, their role, and when they joined
+  ```js
+  import { Header, Icon, Segment, Label } from 'semantic-ui-react';
 
+  function AccountHeader({ role, name, email, createdAt }) {
+    return (
+      <Segment secondary inverted color='violet'>
+        <Label
+          color='teal'
+          size='large'
+          ribbon
+          icon='privacy'
+          content={role}
+          style={{ textTransform: 'capitalize' }}
+        />
+        <Header inverted textAlign='center' as='h1' icon>
+          <Icon name='user' />
+          {name}
+          <Header.Subheader>{email}</Header.Subheader>
+          <Header.Subheader>Joined {createdAt}</Header.Subheader>
+        </Header>
+      </Segment>
+    );
+  }
+
+  export default AccountHeader;
+  ```
+- In components/Account/AccountOrders.js file:
+  - Receive and destructure the orders props from Account parent component
+  - Render the orders and style them with Semantic UI
+  - First check to see if there's any orders
+    - If there isn't, display No past order text and a button that takes user to product list
+    - If there is, display the order history in Semantic UI Accordion
+    - Create a mapOrdersToPanels function that loops over the orders array and display each order into the accordion panel
+  ```js
+  import { Fragment } from 'react';
+  import { Header, Accordion, Label, Segment, Icon, Button, List, Image } from 'semantic-ui-react';
+  import { useRouter } from 'next/router';
+
+  function AccountOrders({ orders }) {
+    const router = useRouter();
+
+    function mapOrdersToPanels(orders) {
+      return orders.map((order) => ({
+        key: order._id,
+        title: {
+          content: <Label color='blue' content={order.createdAt} />
+        },
+        content: {
+          content: (
+            <Fragment>
+              <List.Header as='h3'>
+                Total: ${order.total}
+                <Label
+                  content={order.email}
+                  icon='email'
+                  basic
+                  horizontal
+                  style={{ marginLeft: '1em' }}
+                />
+              </List.Header>
+              <List>
+                {order.products.map((p) => (
+                  <List.Item>
+                    <Image avatar src={p.product.mediaUrl} />
+                    <List.Content>
+                      <List.Header>{p.product.name}</List.Header>
+                      <List.Description>
+                        {p.quantity} x ${p.product.price}
+                      </List.Description>
+                    </List.Content>
+                    <List.Content floated='right'>
+                      <Label tag color='red' size='tiny'>
+                        {p.product.sku}
+                      </Label>
+                    </List.Content>
+                  </List.Item>
+                ))}
+              </List>
+            </Fragment>
+          )
+        }
+      }));
+    }
+
+    return (
+      <Fragment>
+        <Header as='h2'>
+          <Icon name='folder open' />
+          Order History
+        </Header>
+        {orders.length === 0 ? (
+          <Segment inverted tertiary color='grey' textAlign='center'>
+            <Header icon>
+              <Icon name='copy outline' />
+              No past orders
+            </Header>
+            <div>
+              <Button onClick={() => router.push('/')} color='orange'>
+                View Products
+              </Button>
+            </div>
+          </Segment>
+        ) : (
+          <Accordion
+            fluid
+            styled
+            exclusive={false}
+            panels={mapOrdersToPanels(orders)}
+          />
+        )}
+      </Fragment>
+    );
+  }
+
+  export default AccountOrders;
+  ```
+- **Server-side: Create route handler for orders request:**
+- In pages/api/orders.js file:
+  - Import jwt, connectDB helper function, Order model
+  - First we need to call jwt.verify() method to verify the provided token. What's returned from the token is the userId
+  - We can find the orders based on the userId using the Order.find() method. After finding the orders, chain on the .populate() method to populate the products in the orders
+  - Note that we're returning orders object props back to client, instead of orders array
+  ```js
+  import jwt from 'jsonwebtoken';
+  import connectDb from '../../utils/connectDb';
+  import Order from '../../models/Order';
+
+  connectDb();
+
+  export default async (req, res) => {
+    // Check if authorization headers is provided with the request
+    // If not, we want to return early
+    if (!('authorization' in req.headers)) {
+      return res.status(401).send('No authorization token'); //401 means not permitted
+    }
+
+    try {
+      // jwt.verify() method verifies the token
+      // 1st arg is the provided token
+      // 2nd arg is the jwt secret which we use to sign the token
+      // what's returned is an object. Destructure the userId property from it
+      const { userId } = jwt.verify(
+        req.headers.authorization,
+        process.env.JWT_SECRET
+      );
+      const orders = await Order.find({ user: userId }).populate({
+        path: 'products.product',
+        model: 'Product'
+      });
+      // The .find() method returns an orders array. But we want to return orders object back to client
+      res.status(203).json({ orders });
+    } catch (error) {
+      console.error(error);
+      res.status(403).send('Please login again');
+    }
+  };
+  ```
+
+ 
 
 
 
