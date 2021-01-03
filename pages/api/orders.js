@@ -1,16 +1,10 @@
 import jwt from 'jsonwebtoken';
-import connectDb from '../../utils/connectDb';
 import Order from '../../models/Order';
+import connectDb from '../../utils/connectDb';
 
 connectDb();
 
 export default async (req, res) => {
-	// Check if authorization headers is provided with the request
-	// If not, we want to return early
-	if (!('authorization' in req.headers)) {
-		return res.status(401).send('No authorization token'); //401 means not permitted
-	}
-
 	try {
 		// jwt.verify() method verifies the token
 		// 1st arg is the provided token

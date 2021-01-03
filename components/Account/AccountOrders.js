@@ -18,7 +18,7 @@ function AccountOrders({ orders }) {
 							Total: ${order.total}
 							<Label
 								content={order.email}
-								icon='email'
+								icon='mail'
 								basic
 								horizontal
 								style={{ marginLeft: '1em' }}
@@ -26,7 +26,7 @@ function AccountOrders({ orders }) {
 						</List.Header>
 						<List>
 							{order.products.map((p) => (
-								<List.Item>
+								<List.Item key={p._id}>
 									<Image avatar src={p.product.mediaUrl} />
 									<List.Content>
 										<List.Header>{p.product.name}</List.Header>

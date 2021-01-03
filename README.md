@@ -2219,331 +2219,331 @@
   - Copy the Publishable key and paste it into the stripeKey property in CartSummary.js file
   - Copy the secret key and paste in the `STRIPE_SECRET_KEY` env variable in next.config.js file
 - **Client-side: make an api request to checkout cart with Stripe:**
-  - In pages/cart.js file:
-    - Import catchErrors helper function
-    - Create a success and loading states and initialize both to false
-    - Write a handleCheckout method that handles the payment
-      - This method takes paymentData as a parameter
-      - Use try/catch/finally block
-      - We're going to try to make an api request to /api/checkout endpoint
-      - It's a POST request method using axios and pass in the url, payload, and 
-      headers as arguments
-      - Once the payment process is completed, set the success state to true
-      - In handling errors, call the catchErrors method and display the error in alert window
-      - In finally block, set loading state back to false
-    - Show the loading spinner during the process of checking out the user's cart
-    - Pass down the cartProducts and the success states as props to the CartItemList child component
-    - Pass down the handleCheckout function and success state as props to the CartSummary child component
-    ```js
-    import cookie from 'js-cookie';
-    import axios from 'axios';
-    import baseUrl from '../utils/baseUrl';
-    import catchErrors from '../utils/catchErrors';
+- In pages/cart.js file:
+  - Import catchErrors helper function
+  - Create a success and loading states and initialize both to false
+  - Write a handleCheckout method that handles the payment
+    - This method takes paymentData as a parameter
+    - Use try/catch/finally block
+    - We're going to try to make an api request to /api/checkout endpoint
+    - It's a POST request method using axios and pass in the url, payload, and 
+    headers as arguments
+    - Once the payment process is completed, set the success state to true
+    - In handling errors, call the catchErrors method and display the error in alert window
+    - In finally block, set loading state back to false
+  - Show the loading spinner during the process of checking out the user's cart
+  - Pass down the cartProducts and the success states as props to the CartItemList child component
+  - Pass down the handleCheckout function and success state as props to the CartSummary child component
+  ```js
+  import cookie from 'js-cookie';
+  import axios from 'axios';
+  import baseUrl from '../utils/baseUrl';
+  import catchErrors from '../utils/catchErrors';
 
-    function Cart({ products, user }) {
-      const [cartProducts, setCartProducts] = useState(products);
-      const [success, setSuccess] = useState(false);
-      const [loading, setLoading] = useState(false);
+  function Cart({ products, user }) {
+    const [cartProducts, setCartProducts] = useState(products);
+    const [success, setSuccess] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-      async function handleCheckout(paymentData) {
-        try {
-          setLoading(true);
-          const url = `${baseUrl}/api/checkout`;
-          const token = cookie.get('token');
-          const payload = { paymentData };
-          const headers = { headers: { Authorization: token } };
-          await axios.post(url, payload, headers);
-          setSuccess(true);
-        } catch (error) {
-          catchErrors(error, window.alert);
-        } finally {
-          setLoading(false);
-        }
-      }
-
-      return (
-        <Segment loading={loading}>
-          <CartItemList
-            handleRemoveFromCart={handleRemoveFromCart}
-            user={user}
-            products={cartProducts}
-            success={success}
-          />
-          <CartSummary
-            products={cartProducts}
-            handleCheckout={handleCheckout}
-            success={success}
-          />
-        </Segment>
-      );
-    }
-    ```
-  - In components/Cart/CartSummary.js file:
-    - Import the StripeCheckout component from react-stripe-checkout
-    - Wrap the StripeCheckout component around the Checkout button
-      - Then provide the properties for the StripeCheckout component
-    - Destructure the handleCheckout and success props passed from Cart parent component
-    - When the Pay button is clicked, the handleCheckout method is executed in the cart page route
-      - This is done by setting the token property to handleCheckout: `token={handleCheckout}`
-    - Disable the Checkout button after a successful purchase
-    ```js
-    import StripeCheckout from 'react-stripe-checkout';
-
-    <StripeCheckout
-      name='Furniture Boutique'
-      amount={stripeAmount}
-      image={products.length > 0 ? products[0].product.mediaUrl : ''}
-      currency='USD'
-      shippingAddress={true}
-      billingAddress={true}
-      zipCode={true}
-      stripeKey='stripe-publishable-key'
-      token={handleCheckout}
-      triggerEvent='onClick'
-    >
-      <Button
-        icon='cart'
-        disabled={isCartEmpty || success}
-        color='teal'
-        floated='right'
-        content='Checkout'
-      />
-    </StripeCheckout>
-    ```
-  - In components/Cart/CartItemList.js file:
-    - Destructure the success props passed from Cart parent component
-    - Write an if statement that checks if success state is true
-      - If it is, render a success message to user
-    ```js
-    if (success) {
-      return (
-        <Message
-          success
-          header='Success!'
-          content='Your order and payment has been accepted'
-          icon='star outline'
-        />
-      );
-    }
-    ```
-- **Server-side: create cart checkout route handler:**
-  - In pages/api/checkout.js file:
-    ```js
-    import Stripe from 'stripe';
-    import { v4 as uuidv4 } from 'uuid';
-    import jwt from 'jsonwebtoken';
-    import Cart from '../../models/Cart';
-    import Order from '../../models/Order';
-    import calculateCartTotal from '../../utils/calculateCartTotal';
-
-    const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-
-    export default async (req, res) => {
-      const { paymentData } = req.body;
-
+    async function handleCheckout(paymentData) {
       try {
-        // 1) Verify and get user id from token
-        const { userId } = jwt.verify(
-          req.headers.authorization,
-          process.env.JWT_SECRET
-        );
-        // 2) Find cart based on user id, populate it
-        const cart = await Cart.findOne({ user: userId }).populate({
-          path: 'products.product',
-          model: 'Product'
-        });
-        // 3) Calculate cart totals again from cart products
-        const { cartTotal, stripeTotal } = calculateCartTotal(cart.products);
-        // 4) Get email from payment data, see if email linked with existing Stripe customer
-        const prevCustomer = await stripe.customers.list({
-          email: paymentData.email,
-          limit: 1
-        });
-        const isExistingCustomer = prevCustomer.data.length > 0;
-        // 5) If not existing customer, create them based on their email
-        let newCustomer;
-        if (!isExistingCustomer) {
-          newCustomer = await stripe.customers.create({
-            email: paymentData.email,
-            source: paymentData.id
-          });
-        }
-        const customer =
-          (isExistingCustomer && prevCustomer.data[0].id) || newCustomer.id;
-        // 6) Create charge with total, send receipt email
-        const charge = await stripe.charges.create(
-          {
-            currency: 'usd',
-            amount: stripeTotal,
-            receipt_email: paymentData.email,
-            customer,
-            description: `Checkout | ${paymentData.email} | ${paymentData.id}`
-          },
-          {
-            idempotencyKey: uuidv4()
-          }
-        );
-        // 7) Add order data to database
-        await new Order({
-          user: userId,
-          email: paymentData.email,
-          total: cartTotal,
-          products: cart.products
-        }).save();
-        // 8) Clear products in cart
-        await Cart.findOneAndUpdate({ _id: cart._id }, { $set: { products: [] } });
-        // 9) Send back success (200) response
-        res.status(200).send('Checkout successful');
+        setLoading(true);
+        const url = `${baseUrl}/api/checkout`;
+        const token = cookie.get('token');
+        const payload = { paymentData };
+        const headers = { headers: { Authorization: token } };
+        await axios.post(url, payload, headers);
+        setSuccess(true);
       } catch (error) {
-        console.error(error);
-        res.status(500).send('Error processing charge');
+        catchErrors(error, window.alert);
+      } finally {
+        setLoading(false);
       }
-    };
-    ```
-- **Define Order Model:**
-  - The Order model is similar to the Cart model except it also includes the email and total fields and a timestamps for when the order was created
-  - In models/Order.js file:
-    ```js
-    import mongoose from 'mongoose';
+    }
 
-    const { ObjectId, Number } = mongoose.Schema.Types;
-
-    const OrderSchema = new mongoose.Schema(
-      {
-        user: {
-          type: ObjectId,
-          ref: 'User' //referencing the User model
-        },
-        products: [
-          {
-            quantity: {
-              type: Number,
-              default: 1
-            },
-            product: {
-              type: ObjectId,
-              ref: 'Product' //referencing the Product model
-            }
-          }
-        ],
-        email: {
-          type: String,
-          required: true
-        },
-        total: {
-          type: Number,
-          required: true
-        }
-      },
-      {
-        timestamps: true
-      }
+    return (
+      <Segment loading={loading}>
+        <CartItemList
+          handleRemoveFromCart={handleRemoveFromCart}
+          user={user}
+          products={cartProducts}
+          success={success}
+        />
+        <CartSummary
+          products={cartProducts}
+          handleCheckout={handleCheckout}
+          success={success}
+        />
+      </Segment>
     );
+  }
+  ```
+- In components/Cart/CartSummary.js file:
+  - Import the StripeCheckout component from react-stripe-checkout
+  - Wrap the StripeCheckout component around the Checkout button
+    - Then provide the properties for the StripeCheckout component
+  - Destructure the handleCheckout and success props passed from Cart parent component
+  - When the Pay button is clicked, the handleCheckout method is executed in the cart page route
+    - This is done by setting the token property to handleCheckout: `token={handleCheckout}`
+  - Disable the Checkout button after a successful purchase
+  ```js
+  import StripeCheckout from 'react-stripe-checkout';
 
-    export default mongoose.models.Order || mongoose.model('Order', OrderSchema);
-    ```
+  <StripeCheckout
+    name='Furniture Boutique'
+    amount={stripeAmount}
+    image={products.length > 0 ? products[0].product.mediaUrl : ''}
+    currency='USD'
+    shippingAddress={true}
+    billingAddress={true}
+    zipCode={true}
+    stripeKey='stripe-publishable-key'
+    token={handleCheckout}
+    triggerEvent='onClick'
+  >
+    <Button
+      icon='cart'
+      disabled={isCartEmpty || success}
+      color='teal'
+      floated='right'
+      content='Checkout'
+    />
+  </StripeCheckout>
+  ```
+- In components/Cart/CartItemList.js file:
+  - Destructure the success props passed from Cart parent component
+  - Write an if statement that checks if success state is true
+    - If it is, render a success message to user
+  ```js
+  if (success) {
+    return (
+      <Message
+        success
+        header='Success!'
+        content='Your order and payment has been accepted'
+        icon='star outline'
+      />
+    );
+  }
+  ```
+- **Server-side: create cart checkout route handler:**
+- In pages/api/checkout.js file:
+  ```js
+  import Stripe from 'stripe';
+  import { v4 as uuidv4 } from 'uuid';
+  import jwt from 'jsonwebtoken';
+  import Cart from '../../models/Cart';
+  import Order from '../../models/Order';
+  import calculateCartTotal from '../../utils/calculateCartTotal';
+
+  const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+  export default async (req, res) => {
+    const { paymentData } = req.body;
+
+    try {
+      // 1) Verify and get user id from token
+      const { userId } = jwt.verify(
+        req.headers.authorization,
+        process.env.JWT_SECRET
+      );
+      // 2) Find cart based on user id, populate it
+      const cart = await Cart.findOne({ user: userId }).populate({
+        path: 'products.product',
+        model: 'Product'
+      });
+      // 3) Calculate cart totals again from cart products
+      const { cartTotal, stripeTotal } = calculateCartTotal(cart.products);
+      // 4) Get email from payment data, see if email linked with existing Stripe customer
+      const prevCustomer = await stripe.customers.list({
+        email: paymentData.email,
+        limit: 1
+      });
+      const isExistingCustomer = prevCustomer.data.length > 0;
+      // 5) If not existing customer, create them based on their email
+      let newCustomer;
+      if (!isExistingCustomer) {
+        newCustomer = await stripe.customers.create({
+          email: paymentData.email,
+          source: paymentData.id
+        });
+      }
+      const customer =
+        (isExistingCustomer && prevCustomer.data[0].id) || newCustomer.id;
+      // 6) Create charge with total, send receipt email
+      const charge = await stripe.charges.create(
+        {
+          currency: 'usd',
+          amount: stripeTotal,
+          receipt_email: paymentData.email,
+          customer,
+          description: `Checkout | ${paymentData.email} | ${paymentData.id}`
+        },
+        {
+          idempotencyKey: uuidv4()
+        }
+      );
+      // 7) Add order data to database
+      await new Order({
+        user: userId,
+        email: paymentData.email,
+        total: cartTotal,
+        products: cart.products
+      }).save();
+      // 8) Clear products in cart
+      await Cart.findOneAndUpdate({ _id: cart._id }, { $set: { products: [] } });
+      // 9) Send back success (200) response
+      res.status(200).send('Checkout successful');
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error processing charge');
+    }
+  };
+  ```
+- **Define Order Model:**
+- The Order model is similar to the Cart model except it also includes the email and total fields and a timestamps for when the order was created
+- In models/Order.js file:
+  ```js
+  import mongoose from 'mongoose';
+
+  const { ObjectId, Number } = mongoose.Schema.Types;
+
+  const OrderSchema = new mongoose.Schema(
+    {
+      user: {
+        type: ObjectId,
+        ref: 'User' //referencing the User model
+      },
+      products: [
+        {
+          quantity: {
+            type: Number,
+            default: 1
+          },
+          product: {
+            type: ObjectId,
+            ref: 'Product' //referencing the Product model
+          }
+        }
+      ],
+      email: {
+        type: String,
+        required: true
+      },
+      total: {
+        type: Number,
+        required: true
+      }
+    },
+    {
+      timestamps: true
+    }
+  );
+
+  export default mongoose.models.Order || mongoose.model('Order', OrderSchema);
+  ```
 
 
 ### PAGINATION AND MANAGING USER ROLES
 **1. Add Pagination for Product List**
 - Let's divide up our product list into multiple pages instead of having them all in a single page
 - **Client-side: make request to /products endpoint with page query params**
-  - In pages/index.js file:
-    - Instead of making a request to /api/products endpoint, we want to configure our request on a query string with page information. For example, fetch products of page 2 or page 3, etc.
-    - To access the query string in a request, the getInitialProps function automatically receives context object as an argument. In context, there's a query property that we can use to include query string
-    - Create a payload object that contains the query string params of page and size
-    - Pass the payload object along with the url as args to the axios GET request method
-    - The response.data object that comes back contains the products array and totalPage
-    - In the Home component, destructure the products and totalPage props
-    - Import the ProductPagination component and render this component on the Home component
-    - Pass the totalPages as props to the ProductPagination child component
-    ```js
-    import ProductPagination from '../components/Index/ProductPagination';
+- In pages/index.js file:
+  - Instead of making a request to /api/products endpoint, we want to configure our request on a query string with page information. For example, fetch products of page 2 or page 3, etc.
+  - To access the query string in a request, the getInitialProps function automatically receives context object as an argument. In context, there's a query property that we can use to include query string
+  - Create a payload object that contains the query string params of page and size
+  - Pass the payload object along with the url as args to the axios GET request method
+  - The response.data object that comes back contains the products array and totalPage
+  - In the Home component, destructure the products and totalPage props
+  - Import the ProductPagination component and render this component on the Home component
+  - Pass the totalPages as props to the ProductPagination child component
+  ```js
+  import ProductPagination from '../components/Index/ProductPagination';
 
-    // Destructure products and totalPages props from getServerSideProps function
-    function Home({ products, totalPages }) {
-      return (
-        <Fragment>
-          <ProductList products={products} />
-          <ProductPagination totalPages={totalPages} />
-        </Fragment>
-      );
-    }
+  // Destructure products and totalPages props from getServerSideProps function
+  function Home({ products, totalPages }) {
+    return (
+      <Fragment>
+        <ProductList products={products} />
+        <ProductPagination totalPages={totalPages} />
+      </Fragment>
+    );
+  }
 
-    export async function getServerSideProps(ctx) {
-      // console.log(ctx.query)
-      // Check to see if page query is available
-      const page = ctx.query.page ? '' : '1';
-      // size is the number of products on a page
-      const size = 9;
-      // fetch data on server
-      const url = `${baseUrl}/api/products`;
-      // params is query string params
-      const payload = { params: { page, size } };
-      const response = await axios.get(url, payload);
-      // The return response.data object contains products array and totalPages
-      // note: this object will be merged with existing props
-      return { props: response.data };
-    }
-    ```
-  - In components/Index/ProductPagination.js file:
-    - Import useRouter hook from next/router
-    - Destructure totalPages props received from Home parent component
-    - Use Semantic UI Pagination component to render the pagination
-    - Use Next's router to redirect to activePage
-    ```js
-    import { useRouter } from 'next/router';
-    import { Container, Pagination } from 'semantic-ui-react';
+  export async function getServerSideProps(ctx) {
+    // console.log(ctx.query)
+    // Check to see if page query is available
+    const page = ctx.query.page ? '' : '1';
+    // size is the number of products on a page
+    const size = 9;
+    // fetch data on server
+    const url = `${baseUrl}/api/products`;
+    // params is query string params
+    const payload = { params: { page, size } };
+    const response = await axios.get(url, payload);
+    // The return response.data object contains products array and totalPages
+    // note: this object will be merged with existing props
+    return { props: response.data };
+  }
+  ```
+- In components/Index/ProductPagination.js file:
+  - Import useRouter hook from next/router
+  - Destructure totalPages props received from Home parent component
+  - Use Semantic UI Pagination component to render the pagination
+  - Use Next's router to redirect to activePage
+  ```js
+  import { useRouter } from 'next/router';
+  import { Container, Pagination } from 'semantic-ui-react';
 
-    function ProductPagination({ totalPages }) {
-      const router = useRouter();
+  function ProductPagination({ totalPages }) {
+    const router = useRouter();
 
-      return (
-        <Container textAlign='center' style={{ margin: '2em' }}>
-          <Pagination
-            defaultActivePage={1}
-            totalPages={totalPages}
-            onPageChange={(event, data) => {
-              // console.log(data)
-              data.activePage === 1
-                ? router.push('/')
-                : router.push(`/?page=${data.activePage}`);
-            }}
-          />
-        </Container>
-      );
-    }
+    return (
+      <Container textAlign='center' style={{ margin: '2em' }}>
+        <Pagination
+          defaultActivePage={1}
+          totalPages={totalPages}
+          onPageChange={(event, data) => {
+            // console.log(data)
+            data.activePage === 1
+              ? router.push('/')
+              : router.push(`/?page=${data.activePage}`);
+          }}
+        />
+      </Container>
+    );
+  }
 
-    export default ProductPagination;
-    ```
+  export default ProductPagination;
+  ```
 - **Server-side: Create route handler to products with page query endpoint:**
-  - In pages/api/products.js file:
-    - Destructure page and size query string params from req.query
-    - Note that these params received in string format. We need to convert them into numbers
-    - We want to fetch products based on pageNum on the query string and the number of product on a page based on pageSize
-    - We also want to know the totalDocs(products) in the products collection by calling the Product.countDocuments() method on Product
-    - We use that to calculate the totalPages
-    - Finally, we return the products array based on the page string query and the totalPages to the client
-    ```js
-    export default async (req, res) => {
-      const { page, size } = req.query;
-      // Convert query string values to numbers
-      const pageNum = Number(page);
-      const pageSize = Number(size);
-      let products = [];
-      const totalDocs = await Product.countDocuments();
-      const totalPages = Math.ceil(totalDocs / pageSize);
-      if (pageNum === 1) {
-        // limit the number of products getting back from db by pageSize
-        products = await Product.find().limit(pageSize);
-      } else {
-        const skips = pageSize * (pageNum - 1) * -1;
-        products = await Product.find().skip(skips).limit(pageSize);
-      }
-      // const products = await Product.find();
-      res.status(200).json({ products, totalPages });
-    };
-    ```
+- In pages/api/products.js file:
+  - Destructure page and size query string params from req.query
+  - Note that these params received in string format. We need to convert them into numbers
+  - We want to fetch products based on pageNum on the query string and the number of product on a page based on pageSize
+  - We also want to know the totalDocs(products) in the products collection by calling the Product.countDocuments() method on Product
+  - We use that to calculate the totalPages
+  - Finally, we return the products array based on the page string query and the totalPages to the client
+  ```js
+  export default async (req, res) => {
+    const { page, size } = req.query;
+    // Convert query string values to numbers
+    const pageNum = Number(page);
+    const pageSize = Number(size);
+    let products = [];
+    const totalDocs = await Product.countDocuments();
+    const totalPages = Math.ceil(totalDocs / pageSize);
+    if (pageNum === 1) {
+      // limit the number of products getting back from db by pageSize
+      products = await Product.find().limit(pageSize);
+    } else {
+      const skips = pageSize * (pageNum - 1) * -1;
+      products = await Product.find().skip(skips).limit(pageSize);
+    }
+    // const products = await Product.find();
+    res.status(200).json({ products, totalPages });
+  };
+  ```
 
 **2. Create Account Header, Order History**
 - The account route/page displays the user's account header (their name, email, joined date), order history, and user permissions
@@ -2649,7 +2649,7 @@
                 Total: ${order.total}
                 <Label
                   content={order.email}
-                  icon='email'
+                  icon='mail'
                   basic
                   horizontal
                   style={{ marginLeft: '1em' }}
@@ -2657,7 +2657,7 @@
               </List.Header>
               <List>
                 {order.products.map((p) => (
-                  <List.Item>
+                  <List.Item key={p._id}>
                     <Image avatar src={p.product.mediaUrl} />
                     <List.Content>
                       <List.Header>{p.product.name}</List.Header>
@@ -2719,18 +2719,12 @@
   - Note that we're returning orders object props back to client, instead of orders array
   ```js
   import jwt from 'jsonwebtoken';
-  import connectDb from '../../utils/connectDb';
   import Order from '../../models/Order';
+  import connectDb from '../../utils/connectDb';
 
   connectDb();
 
   export default async (req, res) => {
-    // Check if authorization headers is provided with the request
-    // If not, we want to return early
-    if (!('authorization' in req.headers)) {
-      return res.status(401).send('No authorization token'); //401 means not permitted
-    }
-
     try {
       // jwt.verify() method verifies the token
       // 1st arg is the provided token
@@ -2753,6 +2747,138 @@
   };
   ```
 
+**3. Create Root User, Add User Permissions**
+- Up until this point we haven't given user other roles other than the 'user' role. This is the default value they're given when they signup
+- A root user can manage admin and regular users roles. They have access to the User Permissions section to change users' roles in the database
+  - There's only one root user and this user is going to have access to the database
+  - We can change the root user's role manually in MongoDB website in the users collection since this is going to be done just once
+- Admin users can create and delete products within our application
+- Regular users don't have permission to create or delete products. They can add or delete products in their cart, make purchase and view their account
+- **Client-side: make request to /users endpoint to get users data:**
+- In pages/account.js file:
+  - Import the AccountPermissions component
+  - In the Account component, only render the AccountPermissions component if the user.role is equal to root
+  ```js
+  import AccountPermissions from '../components/Account/AccountPermissions';
+
+  {user.role === 'root' && <AccountPermissions currentUserId={user._id} />}
+  ```
+- In components/Account/AccountPermission.js file:
+  - Create a users state and initialize it to an empty array
+  - Create a getUsers function that makes a request to get users in the db and stores it in users state
+    - The request endpoint we'll be making is /users
+    - The payload object contains the headers authorization of the token
+    - What's returned from the response.data object is an array of users, except the root user
+    - Call setUsers() method to update the users state with this users array
+  - Use useEffect() hook to execute the getUsers function. We want the AccountPermissions component to re-render whenever there's a change in users state
+  - Once we get back the array of users from the database we can display the users in the  User Permissions section in a table format
+  - Import the necessary Semantic UI elements to create the table
+  - Map over the users array to display each user in the table
+  - Create a UserPermission component outside and below the AccountPermissions component
+    - This component renders each user table row and cells and a toggle checkbox
+  ```js
+  import { useState, useEffect } from 'react';
+  import { Header, Checkbox, Table, Icon } from 'semantic-ui-react';
+  import axios from 'axios';
+  import cookie from 'js-cookie';
+  import baseUrl from '../../utils/baseUrl';
+
+  function AccountPermissions() {
+    const [users, setUsers] = useState([]);
+
+    useEffect(() => {
+      getUsers();
+    }, []);
+
+    async function getUsers() {
+      const url = `${baseUrl}/api/users`;
+      const token = cookie.get('token');
+      const payload = { headers: { Authorization: token } };
+      const response = await axios.get(url, payload);
+      // console.log(response.data)
+      setUsers(response.data);
+    }
+    return (
+      <div style={{ margin: '2em 0' }}>
+        <Header as='h2'>
+          <Icon name='settings' />
+          User Permissions
+        </Header>
+        <Table compact celled definition>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell />
+              <Table.HeaderCell>Name</Table.HeaderCell>
+              <Table.HeaderCell>Email</Table.HeaderCell>
+              <Table.HeaderCell>Joined</Table.HeaderCell>
+              <Table.HeaderCell>Updated</Table.HeaderCell>
+              <Table.HeaderCell>Role</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+
+          <Table.Body>
+            {users.map((user) => (
+              <UserPermission key={user._id} user={user} />
+            ))}
+          </Table.Body>
+        </Table>
+      </div>
+    );
+  }
+
+  function UserPermission({ user }) {
+    return (
+      <Table.Row>
+        <Table.Cell collapsing>
+          <Checkbox toggle />
+        </Table.Cell>
+        <Table.Cell>{user.name}</Table.Cell>
+        <Table.Cell>{user.email}</Table.Cell>
+        <Table.Cell>{user.createdAt}</Table.Cell>
+        <Table.Cell>{user.updatedAt}</Table.Cell>
+        <Table.Cell>{user.role}</Table.Cell>
+      </Table.Row>
+    );
+  }
+
+  export default AccountPermissions;
+  ```
+- **Server-side: create route handler to users request:**
+- In pages/api/users.js file:
+  - Import jwt, User model, connectDb helper function
+  - First, call jwt.verify() method to verify the provided token. What's returned is the userId. This userId is the root user
+  - Call the User.find() method to get every user in the users collection database, except the root user itself
+    - Use the `$ne` operator to exclude the root user
+    - What's returned is an array of users
+  - Return back to the client the array of users
+  ```js
+  import jwt from 'jsonwebtoken';
+  import User from '../../models/User';
+  import connectDb from '../../utils/connectDb';
+
+  connectDb();
+
+  export default async (req, res) => {
+    try {
+      // jwt.verify() method verifies the token
+      // 1st arg is the provided token
+      // 2nd arg is the jwt secret which we use to sign the token
+      // what's returned is an object. Destructure the userId property from it
+      const { userId } = jwt.verify(
+        req.headers.authorization,
+        process.env.JWT_SECRET
+      );
+      // Get every user in the users collection, EXCEPT for our self - the root user
+      // $ne is not equal to operator
+      // Filter out the user _id that is not equal to the userId
+      const users = await User.find({ _id: { $ne: userId } });
+      res.status(200).json(users);
+    } catch (error) {
+      console.error(error);
+      res.status(403).send('Please login again');
+    }
+  };
+  ```
  
 
 
@@ -2774,4 +2900,4 @@
 - jsonwebtoken (generate a token for user)
 - js-cookie (generate a cookie)
 - nookies (get cookies)
-- npm i react-stripe-checkout (checkout with stripe)
+- npm i stripe react-stripe-checkout (checkout with stripe)
