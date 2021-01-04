@@ -3005,6 +3005,18 @@
   const users = await User.find({ _id: { $ne: userId } }).sort({ role: 'asc' });
   ```
 
+**2. Formatting Dates**
+- Let's format all of the dates in a user-friendly readable format. We can achieve this by writing a utility function and pass in our dates to the function
+- In utils/formatDate.js file:
+  - Write a formatDate function to format a date. This function takes a date as a parameter
+  ```js
+  export default function formatDate(date) {
+    return new Date(date).toLocaleDateString('en-US');
+  }
+  ```
+- Import and use the formatDate function on our dates in AccountHeader.js, AccountOrders.js, and AccountPermissions.js components
+  - Example: `<Table.Cell>{formatDate(user.createdAt)}</Table.Cell>`
+
 
 
 

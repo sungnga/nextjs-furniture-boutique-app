@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { Header, Accordion, Label, Segment, Icon, Button, List, Image } from 'semantic-ui-react';
 import { useRouter } from 'next/router';
+import formatDate from '../../utils/formatDate';
 
 function AccountOrders({ orders }) {
 	const router = useRouter();
@@ -9,7 +10,7 @@ function AccountOrders({ orders }) {
 		return orders.map((order) => ({
 			key: order._id,
 			title: {
-				content: <Label color='blue' content={order.createdAt} />
+				content: <Label color='blue' content={formatDate(order.createdAt)} />
 			},
 			content: {
 				content: (
