@@ -2881,7 +2881,7 @@
   };
   ```
  
-###**4. Change User Roles, Permissions**
+**### 4. Change User Roles, Permissions**
 - Next we want to enable the root user to dynamically change the users roles by toggling the checkbox next to the user
 - To do this, we want to keep track of a user state in the UserPermission component. Whenever the user's role changes on the client-side(the root uses makes the change), we want to make a request to an endpoint to change the user's role in the database
 - In components/Account/AccountPermission.js file and inside the UserPermission component:
@@ -2982,9 +2982,28 @@
   ```
 
 
-
-
-
+### POLISHING OUR APP
+**1. Sorting in Mongoose, MongoDB**
+- In MongoDB, we can sort a set of documents after a given query (such as the find method) by chaining on the .sort() method
+- Sort order history by descending order with most recent order listed first
+- Sort the users in User Permissions panel by their roles, ascending order. Admin users listed first
+- In pages/api/orders.js file:
+  - After the .find() operation on Order model, chain on the .sort() method
+  - Then pass in an object to specify createAt field that we want to filter by and set it to 'asc' or 'desc'
+  ```js
+  const orders = await Order.find({ user: userId })
+    .sort({ createdAt: 'desc' })
+    .populate({
+      path: 'products.product',
+      model: 'Product'
+    });
+  ```
+- In pages/api/users.js file:
+  - After the .find() operation on User model, chain on the .sort() method
+  - Then in the object specify the role field and set it to 'asc'. Admin users will be listed first before regular users
+  ```js
+  const users = await User.find({ _id: { $ne: userId } }).sort({ role: 'asc' });
+  ```
 
 
 

@@ -14,10 +14,12 @@ export default async (req, res) => {
 			req.headers.authorization,
 			process.env.JWT_SECRET
 		);
-		const orders = await Order.find({ user: userId }).populate({
-			path: 'products.product',
-			model: 'Product'
-		});
+		const orders = await Order.find({ user: userId })
+			.sort({ createdAt: 'desc' })
+			.populate({
+				path: 'products.product',
+				model: 'Product'
+			});
 		// The .find() method returns an orders array. But we want to return orders object back to client
 		res.status(203).json({ orders });
 	} catch (error) {

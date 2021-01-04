@@ -17,7 +17,10 @@ export default async (req, res) => {
 		// Get every user in the users collection, EXCEPT for our self - the root user
 		// $ne is not equal to operator
 		// Filter out the user _id that is not equal to the userId
-		const users = await User.find({ _id: { $ne: userId } });
+		// Then sort users by their roles in ascending order
+		const users = await User.find({ _id: { $ne: userId } }).sort({
+			role: 'asc'
+		});
 		res.status(200).json(users);
 	} catch (error) {
 		console.error(error);
