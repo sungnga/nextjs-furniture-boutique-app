@@ -2749,7 +2749,7 @@
 
 **3. Create Root User, Add User Permissions**
 - Up until this point we haven't given user other roles other than the 'user' role. This is the default value they're given when they signup
-- A root user can manage admin and regular users roles. They have access to the User Permissions section to change users' roles in the database
+- A root user can manage admin and regular users roles. They have access to the User Permissions panel to change users' roles in the database
   - There's only one root user and this user is going to have access to the database
   - We can change the root user's role manually in MongoDB website in the users collection since this is going to be done just once
 - Admin users can create and delete products within our application
@@ -2764,6 +2764,7 @@
   {user.role === 'root' && <AccountPermissions currentUserId={user._id} />}
   ```
 - In components/Account/AccountPermission.js file:
+  - This component renders the User Permissions panel within the Account page
   - Create a users state and initialize it to an empty array
   - Create a getUsers function that makes a request to get users in the db and stores it in users state
     - The request endpoint we'll be making is /users
@@ -2880,6 +2881,110 @@
   };
   ```
  
+###**4. Change User Roles, Permissions**
+- Next we want to enable the root user to dynamically change the users roles by toggling the checkbox next to the user
+- To do this, we want to keep track of a user state in the UserPermission component. Whenever the user's role changes on the client-side(the root uses makes the change), we want to make a request to an endpoint to change the user's role in the database
+- In components/Account/AccountPermission.js file and inside the UserPermission component:
+  - Create an admin state and initialize it to user.role of admin
+  - Then in the user's role table cell, check if the admin state is set to 'admin'. If it is, render 'admin' else render 'user'
+  - For the toggle checkbox cell,
+    - when it is clicked(onChange event), toggle its opposite by executing the handleChangePermission function
+    - add a `checked` property and set it to admin state, where the checkbox is checked when admin state is true
+  - Write a handleChangePermission function that calls the setAdmin() method to set the previous state to its opposite
+  - Now when the checkbox is clicked it should toggle the user's role between admin and user
+  ```js
+  function UserPermission({ user }) {
+    const [admin, setAdmin] = useState(user.role === 'admin');
+
+    function handleChangePermission() {
+      setAdmin((prevState) => !prevState);
+    }
+
+    return (
+      <Table.Row>
+        <Table.Cell collapsing>
+          <Checkbox checked={admin} toggle onChange={handleChangePermission} />
+        </Table.Cell>
+        <Table.Cell>{user.name}</Table.Cell>
+        <Table.Cell>{user.email}</Table.Cell>
+        <Table.Cell>{user.createdAt}</Table.Cell>
+        <Table.Cell>{user.updatedAt}</Table.Cell>
+        <Table.Cell>{admin ? 'admin' : 'user'}</Table.Cell>
+      </Table.Row>
+    );
+  }
+  ```
+- Once the user's role is changed (by updating the admin state), we want to make a request to backend to update the user's role in the database
+- **Client-side: make request to /account endpoint to update user's role:**
+- In components/Account/AccountPermission.js file and in UserPermission component:
+  - Use useEffect hook to re-render the component when the admin state changes
+  - However, we don't want useEffect hook to run when the component first mounts. We want useEffect to run only when admin state changes. To do this, we first call useRef() hook and initialize the value to true. Then inside useEffect hook, change its current value to false and return early. This way, useEffect hook will run any code after it
+  - In our case, we want useEffect to execute the updatePermission function when admin state changes
+  - Write an updatePermission function that makes a request to /account endpoint to update the user's role based on user id
+  ```js
+  function UserPermission({ user }) {
+    const [admin, setAdmin] = useState(user.role === 'admin');
+    const isFirstRun = useRef(true);
+
+    // We only want useEffect to run when admin state changes, not when the component first mounts
+    useEffect(() => {
+      // The current property is whatever value we initialize when calling useRef() hook
+      if (isFirstRun.current) {
+        isFirstRun.current = false;
+        return;
+      }
+      updatePermission();
+    }, [admin]);
+
+    function handleChangePermission() {
+      setAdmin((prevState) => !prevState);
+    }
+
+    // Make request to update user's role based on user id in the db
+    async function updatePermission() {
+      const url = `${baseUrl}/api/account`;
+      const payload = { _id: user._id, role: admin ? 'admin' : 'user' };
+      // Use put method to update the db
+      await axios.put(url, payload);
+    }
+
+    return ( ... )
+  }
+  ```
+- **Server-side: create a route to handle account update request:**
+- In pages/api/account.js file:
+  - Now that we have more than one type of requests we want to use the switch statement to handle multiple types
+  - Write a handlePutRequest function that updates a user's role field in the users collection
+    - Use findOneAndUpdate() method on User model. Find by user id and update the role field
+    - Send back a status code along with a message
+  ```js
+  export default async (req, res) => {
+    switch (req.method) {
+      case 'GET':
+        await handleGetRequest(req, res);
+        break;
+      case 'PUT':
+        await handlePutRequest(req, res);
+        break;
+      default:
+        res.status(405).send(`Method ${req.method} not allowed`);
+        break;
+    }
+  };
+
+  async function handlePutRequest(req, res) {
+    const { _id, role } = req.body;
+    // Find user by its id
+    // Update the role field with the role data
+    await User.findOneAndUpdate({ _id }, { role });
+    res.status(203).send('User updated');
+  }
+  ```
+
+
+
+
+
 
 
 
