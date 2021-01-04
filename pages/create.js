@@ -76,7 +76,6 @@ function CreateProduct() {
 			// const payload = { name: '', description, price, mediaUrl };
 			const payload = { name, description, price, mediaUrl };
 			const response = await axios.post(url, payload);
-			console.log(response);
 			// Clear the form input fields after submit
 			setProduct(INITIAL_PRODUCT);
 			// Show the success message

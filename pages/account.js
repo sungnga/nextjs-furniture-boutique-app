@@ -11,7 +11,7 @@ function Account({ user, orders }) {
 		<Fragment>
 			<AccountHeader {...user} />
 			<AccountOrders orders={orders} />
-			{user.role === 'root' && <AccountPermissions currentUserId={user._id} />}
+			{user.role === 'root' && <AccountPermissions />}
 		</Fragment>
 	);
 }

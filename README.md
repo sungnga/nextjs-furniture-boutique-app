@@ -222,47 +222,47 @@
     - Then what we want is the srv string. Copy the path to the clipboard
     - We just need to replace the username and password that we created for the root user earlier
 - **Connect to database:**
-  - In next.config.js file:
-    - All of our environment variables are stored in this file
-    - `MONGO_SRV: "<insert mongodb-srv path here>"`
-    - Replace the password and dbname
-    - Must restart the server
-  - In utils/connectDb.js file:
-    - In order to connect to the database we're going to use Mongoose package
-    - We use Mongoose quite a lot when working with database
-    - Install Mongoose: `npm i mongoose`
-    - Write a connectDB function that connects our application to the database
-    ```js
-    import mongoose from 'mongoose';
+- In next.config.js file:
+  - All of our environment variables are stored in this file
+  - `MONGO_SRV: "<insert mongodb-srv path here>"`
+  - Replace the password and dbname
+  - Must restart the server
+- In utils/connectDb.js file:
+  - In order to connect to the database we're going to use Mongoose package
+  - We use Mongoose quite a lot when working with database
+  - Install Mongoose: `npm i mongoose`
+  - Write a connectDB function that connects our application to the database
+  ```js
+  import mongoose from 'mongoose';
 
-    const connection = {};
+  const connection = {};
 
-    // Connect to database
-    async function connectDB() {
-      // If there is already a connection to db, just return
-      // No need to make a new connection
-      if (connection.isConnected) {
-        // Use existing database connection
-        console.log('Using existing connection');
-        return;
-      }
-      // Use new database connection when connecting for 1st time
-      // 1st arg is the mongo-srv path that mongo generated for our db cluster
-      // The 2nd arg is options object. Theses are deprecation warnings
-      // mongoose.connect() returns a promise
-      // What we get back from this is a reference to our database
-      const db = await mongoose.connect(process.env.MONGO_SRV, {
-        useCreateIndex: true,
-        useFindAndModify: false,
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
-      console.log('DB Connected');
-      connection.isConnected = db.connections[0].readyState;
+  // Connect to database
+  async function connectDB() {
+    // If there is already a connection to db, just return
+    // No need to make a new connection
+    if (connection.isConnected) {
+      // Use existing database connection
+      console.log('Using existing connection');
+      return;
     }
+    // Use new database connection when connecting for 1st time
+    // 1st arg is the mongo-srv path that mongo generated for our db cluster
+    // The 2nd arg is options object. Theses are deprecation warnings
+    // mongoose.connect() returns a promise
+    // What we get back from this is a reference to our database
+    const db = await mongoose.connect(process.env.MONGO_SRV, {
+      useCreateIndex: true,
+      useFindAndModify: false,
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('DB Connected');
+    connection.isConnected = db.connections[0].readyState;
+  }
 
-    export default connectDB;
-    ```
+  export default connectDB;
+  ```
 - **Call the connectDB function in routes:**
   - Finally, import and execute the connectDB function in the request routes files which are in the pages/api folder
   - Must restart the server
@@ -561,6 +561,7 @@
 - To implement the modal functionality, we want to create a state for the modal to keep track of modal state in our application. We can use React useState() hook
 - When the Cancel button is clicked, we just want to close the modal, setting the modal state to false
 - When the Delete button is clicked, we want to make a delete API request to backend and delete the product based on id. Then redirect user to products index page
+- **Client-side: make a delete product request to /product endpoint:**
 - In components/Product/ProductAttributes.js file:
   - Use Semantic UI Modal component to make the modal
   - Use React useState() to create the modal state. Default value is set to false
@@ -619,6 +620,7 @@
 
   export default ProductAttributes;
   ```
+- **Server-side: create route handler to delete product request**
 - In pages/api/product.js file:
   - In the api routes for product, we want to be able to handle different types of requests such as create, read, update, and delete
   - For each request, we have access to the request and response objects. Using `req.method`, we can figure out what type of request it is
@@ -888,124 +890,124 @@
     />
     ```
 - **Handle errors on client-side when making request to image upload and request to product endpoint:**
-  - A common pattern used to catch errors in asynchronous functions in executing promises is the try/catch block
-    - In the `try` block is the code we try to run
-    - In there's an error, the `catch` block can catch the error. The catch block automatically receives the error and we can decide what to do with the error
-    - In the `finally` block is where we want run a piece of code no matter what the outcome is
-  - There are different types of errors we might get back and instead of console logging the error, we can display an error message to the user
-  - Let's write a separate function that displays an error message based on the type of error returned from the promise
-  - In utils/catchErrors.js file:
-    ```js
-    // 1st arg is the error received from the catch block that gets passed down to this function
-    // 2nd arg is a callback function that receives the errorMsg as an argument
-    function catchErrors(error, displayError) {
-      let errorMsg;
-      if (error.response) {
-        // The request was made and the server response with a  status code
-        // that is not in the range of 2xx
-        errorMsg = error.response.data;
-        console.error('Error response', errorMsg);
+- A common pattern used to catch errors in asynchronous functions in executing promises is the try/catch block
+  - In the `try` block is the code we try to run
+  - In there's an error, the `catch` block can catch the error. The catch block automatically receives the error and we can decide what to do with the error
+  - In the `finally` block is where we want run a piece of code no matter what the outcome is
+- There are different types of errors we might get back and instead of console logging the error, we can display an error message to the user
+- Let's write a separate function that displays an error message based on the type of error returned from the promise
+- In utils/catchErrors.js file:
+  ```js
+  // 1st arg is the error received from the catch block that gets passed down to this function
+  // 2nd arg is a callback function that receives the errorMsg as an argument
+  function catchErrors(error, displayError) {
+    let errorMsg;
+    if (error.response) {
+      // The request was made and the server response with a  status code
+      // that is not in the range of 2xx
+      errorMsg = error.response.data;
+      console.error('Error response', errorMsg);
 
-        // For Cloudingary image uploads
-        if (error.response.data.error) {
-          errorMsg = error.response.data.error.message;
-        }
-      } else if (error.request) {
-        // The request was made, but no response was received
-        errorMsg = error.request;
-        console.error('Error request', errorMsg);
-      } else {
-        // Something else happened in making the request that triggered an error
-        errorMsg = error.message;
-        console.error('Error message', errorMsg);
+      // For Cloudingary image uploads
+      if (error.response.data.error) {
+        errorMsg = error.response.data.error.message;
       }
-      displayError(errorMsg);
+    } else if (error.request) {
+      // The request was made, but no response was received
+      errorMsg = error.request;
+      console.error('Error request', errorMsg);
+    } else {
+      // Something else happened in making the request that triggered an error
+      errorMsg = error.message;
+      console.error('Error message', errorMsg);
     }
+    displayError(errorMsg);
+  }
 
-    export default catchErrors;
-    ```
-  - Then use the catchErrors function in the catch block in the handleSubmit function and display the error message to the user. This is handling errors when user submits a product form to create a new product
-  - In pages/create.js file:
-    - Create an error state and initialize its value to an empty string
-    - Use try/catch/finally block in the handleSubmit function
-    - Import and call the catchErrors function in the catch block
-    - Lastly, check error state to see if there's an error
-    - If there is, use Semantic UI Message component to render the error message in the Form component
-    ```js
-    import catchErrors from '../utils/catchErrors';
+  export default catchErrors;
+  ```
+- Then use the catchErrors function in the catch block in the handleSubmit function and display the error message to the user. This is handling errors when user submits a product form to create a new product
+- In pages/create.js file:
+  - Create an error state and initialize its value to an empty string
+  - Use try/catch/finally block in the handleSubmit function
+  - Import and call the catchErrors function in the catch block
+  - Lastly, check error state to see if there's an error
+  - If there is, use Semantic UI Message component to render the error message in the Form component
+  ```js
+  import catchErrors from '../utils/catchErrors';
 
-    const [error, setError] = useState('');
+  const [error, setError] = useState('');
 
-    async function handleSubmit(event) {
-      try {
-        event.preventDefault();
-        setLoading(true);
-        const mediaUrl = await handleImageUpload();
-        // console.log(mediaUrl)
-        const url = `${baseUrl}/api/product`;
-        const { name, price, description } = product;
-        // Triggering an error for testing
-        // const payload = { name: '', description, price, mediaUrl };
-        const payload = { name, description, price, mediaUrl };
-        const response = await axios.post(url, payload);
-        console.log(response);
-        // Clear the form input fields after submit
-        setProduct(INITIAL_PRODUCT);
-        // Show the success message
-        setSuccess(true);
-      } catch (error) {
-        // 1st arg is the error received from the promise
-        // 2nd arg is the function to update the error state
-        catchErrors(error, setError);
-        // console.error('ERROR!!', error)
-      } finally {
-        // At the end of handleSubmit, set loading state to false. Loading icon will go away
-        setLoading(false);
-      }
+  async function handleSubmit(event) {
+    try {
+      event.preventDefault();
+      setLoading(true);
+      const mediaUrl = await handleImageUpload();
+      // console.log(mediaUrl)
+      const url = `${baseUrl}/api/product`;
+      const { name, price, description } = product;
+      // Triggering an error for testing
+      // const payload = { name: '', description, price, mediaUrl };
+      const payload = { name, description, price, mediaUrl };
+      const response = await axios.post(url, payload);
+      console.log(response);
+      // Clear the form input fields after submit
+      setProduct(INITIAL_PRODUCT);
+      // Show the success message
+      setSuccess(true);
+    } catch (error) {
+      // 1st arg is the error received from the promise
+      // 2nd arg is the function to update the error state
+      catchErrors(error, setError);
+      // console.error('ERROR!!', error)
+    } finally {
+      // At the end of handleSubmit, set loading state to false. Loading icon will go away
+      setLoading(false);
     }
-    // Display the error message to the user
-    // Boolean(error) returns true or false. Error is the error state
-    <Form
-      loading={loading}
-      error={Boolean(error)}
-      success={success}
-      onSubmit={handleSubmit}
-    >
-      <Message error header='Oops!' content={error} />
-    </Form>
-    ```
+  }
+  // Display the error message to the user
+  // Boolean(error) returns true or false. Error is the error state
+  <Form
+    loading={loading}
+    error={Boolean(error)}
+    success={success}
+    onSubmit={handleSubmit}
+  >
+    <Message error header='Oops!' content={error} />
+  </Form>
+  ```
 - **Handling errors on server side:**
-  - On the server side, we want to try to figure out all the potential causes of errors and give the client as much information to resolve the error on their own
-  - If there are some errors that we don't know about, we want to back a status code and a message about the error as well
-  - Use try/catch block in async functions to catch the error returned from the promise
-  - In pages/api/product.js file:
-    ```js
-    async function handlePostRequest(req, res) {
-      // The payload info sent on request by the client is accessible in req.body object
-      const { name, price, description, mediaUrl } = req.body;
-      try {
-        // Check to see if the value for all the input fields is provided
-        if (!name || !price || !description || !mediaUrl) {
-          // status code 422 means the user hasn't provided the necessary info
-          return res.status(422).send('Product missing one or more fields');
-        }
-        // Create a product instance from the Product model
-        const newProduct = await new Product({
-          name,
-          price,
-          description,
-          mediaUrl
-        });
-        // Save the product to db
-        newProduct.save();
-        // status code 201 means a resource is created
-        res.status(201).json(newProduct);
-      } catch (error) {
-        console.error(error);
-        res.status(500).send('Server error in creating product');
+- On the server side, we want to try to figure out all the potential causes of errors and give the client as much information to resolve the error on their own
+- If there are some errors that we don't know about, we want to back a status code and a message about the error as well
+- Use try/catch block in async functions to catch the error returned from the promise
+- In pages/api/product.js file:
+  ```js
+  async function handlePostRequest(req, res) {
+    // The payload info sent on request by the client is accessible in req.body object
+    const { name, price, description, mediaUrl } = req.body;
+    try {
+      // Check to see if the value for all the input fields is provided
+      if (!name || !price || !description || !mediaUrl) {
+        // status code 422 means the user hasn't provided the necessary info
+        return res.status(422).send('Product missing one or more fields');
       }
+      // Create a product instance from the Product model
+      const newProduct = await new Product({
+        name,
+        price,
+        description,
+        mediaUrl
+      });
+      // Save the product to db
+      newProduct.save();
+      // status code 201 means a resource is created
+      res.status(201).json(newProduct);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Server error in creating product');
     }
-    ```
+  }
+  ```
 
 **2. Structure Cart Page**
 - The cart page route consists of a section that displays a list of products in their shopping cart and a section that displays the subtotal and a checkout button
@@ -1140,150 +1142,150 @@
 - When a user signs up by submitting the Signup form, we want to create a new user and store it in a users collection in the database. We want to create a User model that defines what a user document would look like
 - If a new user is successfully created, what's returned to the client from the server is a jsonwebtoken. We then use this token to set a cookie in the browser so that we can identify this client as an authenticated user
 - **Client-side: make a request to signup user endpoint:**
-  - In pages/signup.js file:
-    - Import axios and baseUrl helper 
-    - Call axios.post() method to make the request to signup user
-      - 1st arg is the request endpoint
-      - 2nd arg is the payload which contains the user data
-      - This is an async operation
-    ```js
-    import axios from 'axios';
-    import baseUrl from '../utils/baseUrl';
+- In pages/signup.js file:
+  - Import axios and baseUrl helper 
+  - Call axios.post() method to make the request to signup user
+    - 1st arg is the request endpoint
+    - 2nd arg is the payload which contains the user data
+    - This is an async operation
+  ```js
+  import axios from 'axios';
+  import baseUrl from '../utils/baseUrl';
 
-    // make request to signup user
-    const url = `${baseUrl}/api/signup`
-    // Spread in the user data coming from user state
-    const payload = { ...user }
-    // What's returned from the request is a token in response.data object
-    const response = await axios.post(url, payload)
-    ```
+  // make request to signup user
+  const url = `${baseUrl}/api/signup`
+  // Spread in the user data coming from user state
+  const payload = { ...user }
+  // What's returned from the request is a token in response.data object
+  const response = await axios.post(url, payload)
+  ```
 - **Create User model:**
-  - In models/User.js file:
-    ```js
-    import mongoose from 'mongoose';
+- In models/User.js file:
+  ```js
+  import mongoose from 'mongoose';
 
-    const { String } = mongoose.Schema.Types;
+  const { String } = mongoose.Schema.Types;
 
-    const UserSchema = new mongoose.Schema(
-      {
-        name: {
-          type: String,
-          required: true
-        },
-        email: {
-          type: String,
-          required: true,
-          unique: true
-        },
-        password: {
-          type: String,
-          required: true,
-          select: false
-        },
-        role: {
-          type: String,
-          required: true,
-          default: 'user',
-          enum: ['user', 'admin', 'root'] //the role field can only accept one of these three values
-        }
+  const UserSchema = new mongoose.Schema(
+    {
+      name: {
+        type: String,
+        required: true
       },
-      {
-        timestamps: true
+      email: {
+        type: String,
+        required: true,
+        unique: true
+      },
+      password: {
+        type: String,
+        required: true,
+        select: false
+      },
+      role: {
+        type: String,
+        required: true,
+        default: 'user',
+        enum: ['user', 'admin', 'root'] //the role field can only accept one of these three values
       }
-    );
+    },
+    {
+      timestamps: true
+    }
+  );
 
-    export default mongoose.models.User || mongoose.model('User', UserSchema);
-    ```
+  export default mongoose.models.User || mongoose.model('User', UserSchema);
+  ```
 - **Server-side: create signup route handler to signup user with JWT:**
-  - In pages/api/signup.js file:
-    - Import bcrypt package to hash user's password
-    - Import connectDB to connect to our database
-    - Import User model to create a user instance
-    - Import jwt jsonwebtoken to generate a token
-    ```js
-    import bcrypt from 'bcrypt';
-    import jwt from 'jsonwebtoken';
-    import connectDB from '../../utils/connectDb';
-    import User from '../../models/User';
+- In pages/api/signup.js file:
+  - Import bcrypt package to hash user's password
+  - Import connectDB to connect to our database
+  - Import User model to create a user instance
+  - Import jwt jsonwebtoken to generate a token
+  ```js
+  import bcrypt from 'bcrypt';
+  import jwt from 'jsonwebtoken';
+  import connectDB from '../../utils/connectDb';
+  import User from '../../models/User';
 
-    connectDB();
+  connectDB();
 
-    export default async (req, res) => {
-      const { name, email, password } = req.body;
-      try {
-        // 1) Check to see if the user already exists in the db
-        const user = await User.findOne({ email });
-        if (use) {
-          return res.status(422).send(`User already exist with email ${email}`);
-        }
-        // 2) --if not, hash their password
-        const hash = await bcrypt.hash(password, 10);
-        // 3) Create user
-        const newUser = await new User({
-          name,
-          email,
-          password: hash
-        });
-        newUser.save();
-        console.log(newUser);
-        // 4) Create token for the new user
-        // A token expires after a certain period of time
-        const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
-          expiresIn: '7d'
-        });
-        // 5) Send back token
-        res.status(201).json(token);
-      } catch (error) {
-        console.error(error);
-        res.status(500).send('Error signup user. Please try again later');
+  export default async (req, res) => {
+    const { name, email, password } = req.body;
+    try {
+      // 1) Check to see if the user already exists in the db
+      const user = await User.findOne({ email });
+      if (use) {
+        return res.status(422).send(`User already exist with email ${email}`);
       }
-    };
-    ```
+      // 2) --if not, hash their password
+      const hash = await bcrypt.hash(password, 10);
+      // 3) Create user
+      const newUser = await new User({
+        name,
+        email,
+        password: hash
+      });
+      newUser.save();
+      console.log(newUser);
+      // 4) Create token for the new user
+      // A token expires after a certain period of time
+      const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
+        expiresIn: '7d'
+      });
+      // 5) Send back token
+      res.status(201).json(token);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error signup user. Please try again later');
+    }
+  };
+  ```
 - **Store the JWT token in the browser as a cookie:**
-  - Make a request to our signup endpoint -> get the token back on the client -> use a function to put the token in our browser as a cookie that can be accessed on the client or server
-  - In utils/auth.js file:
-    - Import js-cookie
-    - Write a handleLogin helper function that sets a cookie based on the given token
-    ```js
-    import cookie from 'js-cookie';
-    import Router from 'next/router';
+- Make a request to our signup endpoint -> get the token back on the client -> use a function to put the token in our browser as a cookie that can be accessed on the client or server
+- In utils/auth.js file:
+  - Import js-cookie
+  - Write a handleLogin helper function that sets a cookie based on the given token
+  ```js
+  import cookie from 'js-cookie';
+  import Router from 'next/router';
 
-    export function handleLogin(token) {
-      // 1st arg is the key. We'll call it token
-      // 2nd arg is the value, the given token
-      cookie.set('token', token);
-      // Redirect to the account route
-      Router.push('/account');
-    }
-    ```
-  - In pages/signup.js file:
-    - Import the handleLogin helper function
-    - Once we get the token back from the request, call the helper function and pass in the token as an argument
-    - This will set a cookie in the browser for this particular token
-    - Once handleSubmit is completed, a new user is successfully created, and a cookie is added to the browser, this helper function redirects user to the account page
-    ```js
-    import { handleLogin } from '../utils/auth';
+  export function handleLogin(token) {
+    // 1st arg is the key. We'll call it token
+    // 2nd arg is the value, the given token
+    cookie.set('token', token);
+    // Redirect to the account route
+    Router.push('/account');
+  }
+  ```
+- In pages/signup.js file:
+  - Import the handleLogin helper function
+  - Once we get the token back from the request, call the helper function and pass in the token as an argument
+  - This will set a cookie in the browser for this particular token
+  - Once handleSubmit is completed, a new user is successfully created, and a cookie is added to the browser, this helper function redirects user to the account page
+  ```js
+  import { handleLogin } from '../utils/auth';
 
-    async function handleSubmit(event) {
-      event.preventDefault();
-      try {
-        setLoading(true);
-        setError('');
-        // make request to signup user
-        const url = `${baseUrl}/api/signup`;
-        // Spread in the user data coming from user state
-        const payload = { ...user };
-        // What's returned from the request is a token in response.data object
-        const response = await axios.post(url, payload);
-        // Set cookie in the browser
-        handleLogin(response.data);
-      } catch (error) {
-        catchErrors(error, setError);
-      } finally {
-        setLoading(false);
-      }
+  async function handleSubmit(event) {
+    event.preventDefault();
+    try {
+      setLoading(true);
+      setError('');
+      // make request to signup user
+      const url = `${baseUrl}/api/signup`;
+      // Spread in the user data coming from user state
+      const payload = { ...user };
+      // What's returned from the request is a token in response.data object
+      const response = await axios.post(url, payload);
+      // Set cookie in the browser
+      handleLogin(response.data);
+    } catch (error) {
+      catchErrors(error, setError);
+    } finally {
+      setLoading(false);
     }
-    ```
+  }
+  ```
 
 **3. Validate POST Content on Server Side**
 - Right now users can enter anything they want in the input fields when they sign up. We want to set some constraints on the name, email, and password fields. We want to validate on the server side the values that are provided on the request body and then send an error back to the client and display it to users if it doesn't meet the conditions that we set
@@ -1306,93 +1308,93 @@
 
 **4. Add Login Functionality**
 - **Client-side: make a request to login user endpoint**
-  - In pages/login.js file:
-    - Import axios and baseUrl helper 
-    - Call axios.post() method to make the request to login user
-    ```js
-    import axios from 'axios';
-    import baseUrl from '../utils/baseUrl';
+- In pages/login.js file:
+  - Import axios and baseUrl helper 
+  - Call axios.post() method to make the request to login user
+  ```js
+  import axios from 'axios';
+  import baseUrl from '../utils/baseUrl';
 
-    const url = `${baseUrl}/api/login`;
-    // Spread in user object, which come from user state
-    const payload = { ...user };
-    // What's returned from the request is a token in response.data object
-    const response = await axios.post(url, payload);
-    ```
+  const url = `${baseUrl}/api/login`;
+  // Spread in user object, which come from user state
+  const payload = { ...user };
+  // What's returned from the request is a token in response.data object
+  const response = await axios.post(url, payload);
+  ```
 - **Server-side: create login user route handler with JWT**
-  - In pages/api/login.js file:
-    - Use the try/catch block to handle the login user route request
-    ```js
-    import bcrypt from 'bcrypt';
-    import jwt from 'jsonwebtoken';
-    import connectDB from '../../utils/connectDb';
-    import User from '../../models/User';
+- In pages/api/login.js file:
+  - Use the try/catch block to handle the login user route request
+  ```js
+  import bcrypt from 'bcrypt';
+  import jwt from 'jsonwebtoken';
+  import connectDB from '../../utils/connectDb';
+  import User from '../../models/User';
 
-    // Connect to the database
-    connectDB();
+  // Connect to the database
+  connectDB();
 
-    export default async (req, res) => {
-      const { email, password } = req.body;
-      try {
-        // 1) Check to see if a user exists with the provided email
-        // In User schema, we exclude password by default
-        // But here, we want to select the password when finding a user in the db
-        const user = await User.findOne({ email }).select('+password');
-        // 2) --if not, return error
-        if (!user) {
-          return res.status(404).send('No user exists with that email');
-        }
-        // 3) Check to see if users' password matches the one in db
-        // 1st arg is the password the user provided
-        // 2nd arg is the password in the db
-        // returns true or false
-        const passwordsMatch = await bcrypt.compare(password, user.password);
-        // 4) --if so, generate a token
-        if (passwordsMatch) {
-          const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-            expiresIn: '7d'
-          });
-          res.status(200).json(token);
-        } else {
-          res.status(401).send('Passwords do not match'); //401 means not authenticated
-        }
-        // 5) Send that token to the client
-      } catch (error) {
-        console.error(error);
-        res.status(500).send('Error logging in user');
+  export default async (req, res) => {
+    const { email, password } = req.body;
+    try {
+      // 1) Check to see if a user exists with the provided email
+      // In User schema, we exclude password by default
+      // But here, we want to select the password when finding a user in the db
+      const user = await User.findOne({ email }).select('+password');
+      // 2) --if not, return error
+      if (!user) {
+        return res.status(404).send('No user exists with that email');
       }
-    };
-    ```
-- **Store the JWT token in the browser as a cookie:**
-  - Once the client receives the token from the server, we want to use a function to put the token in our browser as a cookie that can be accessed on the client or server
-  - In pages/login.js file:
-    - Import the handleLogin helper function
-    - Once we get the token back from the request, call the helper function and pass in the token as an argument
-    - This will set a cookie in the browser for this particular token
-    - Once handleSubmit is completed, the user is successfully logged in, and a cookie is added to the browser, this helper function redirects user to the account page
-    ```js
-    import { handleLogin } from '../utils/auth';
-
-    async function handleSubmit(event) {
-      event.preventDefault();
-      try {
-        setLoading(true);
-        setError('');
-        // make request to signup user
-        const url = `${baseUrl}/api/login`;
-        // Spread in use object, which comes from user state
-        const payload = { ...user };
-        // What's returned from the request is a token in response.data object
-        const response = await axios.post(url, payload);
-        // Set cookie in the browser
-        handleLogin(response.data);
-      } catch (error) {
-        catchErrors(error, setError);
-      } finally {
-        setLoading(false);
+      // 3) Check to see if users' password matches the one in db
+      // 1st arg is the password the user provided
+      // 2nd arg is the password in the db
+      // returns true or false
+      const passwordsMatch = await bcrypt.compare(password, user.password);
+      // 4) --if so, generate a token
+      if (passwordsMatch) {
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+          expiresIn: '7d'
+        });
+        res.status(200).json(token);
+      } else {
+        res.status(401).send('Passwords do not match'); //401 means not authenticated
       }
+      // 5) Send that token to the client
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error logging in user');
     }
-    ```
+  };
+  ```
+- **Store the JWT token in the browser as a cookie:**
+- Once the client receives the token from the server, we want to use a function to put the token in our browser as a cookie that can be accessed on the client or server
+- In pages/login.js file:
+  - Import the handleLogin helper function
+  - Once we get the token back from the request, call the helper function and pass in the token as an argument
+  - This will set a cookie in the browser for this particular token
+  - Once handleSubmit is completed, the user is successfully logged in, and a cookie is added to the browser, this helper function redirects user to the account page
+  ```js
+  import { handleLogin } from '../utils/auth';
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    try {
+      setLoading(true);
+      setError('');
+      // make request to signup user
+      const url = `${baseUrl}/api/login`;
+      // Spread in use object, which comes from user state
+      const payload = { ...user };
+      // What's returned from the request is a token in response.data object
+      const response = await axios.post(url, payload);
+      // Set cookie in the browser
+      handleLogin(response.data);
+    } catch (error) {
+      catchErrors(error, setError);
+    } finally {
+      setLoading(false);
+    }
+  }
+  ```
 
 **5. Create User Cart Upon Signup**
 - After a user sign up and when we create a document for them in the database, we need to link the user document with a cart document in the database
@@ -1402,43 +1404,43 @@
   - Whenever a new document is created in a collection, Mongoose automatically generates a _id for it. We can use ObjectId to reference other documents in a given document. MongoDB then uses an action called populate on that id to expand the data into the document 
   - So when we create a new cart document, we can associate a user document by its ObjectId
 - **Create a Cart model:**
-  - In models/Cart.js file:
-    ```js
-    import mongoose from 'mongoose';
+- In models/Cart.js file:
+  ```js
+  import mongoose from 'mongoose';
 
-    const { ObjectId, Number } = mongoose.Schema.Types;
+  const { ObjectId, Number } = mongoose.Schema.Types;
 
-    const CartSchema = new mongoose.Schema({
-      user: {
-        type: ObjectId,
-        ref: 'User' //referencing the User model
-      },
-      products: [
-        {
-          quantity: {
-            type: Number,
-            default: 1
-          },
-          product: {
-            type: ObjectId,
-            ref: 'Product' //referencing the Product model
-          }
+  const CartSchema = new mongoose.Schema({
+    user: {
+      type: ObjectId,
+      ref: 'User' //referencing the User model
+    },
+    products: [
+      {
+        quantity: {
+          type: Number,
+          default: 1
+        },
+        product: {
+          type: ObjectId,
+          ref: 'Product' //referencing the Product model
         }
-      ]
-    });
+      }
+    ]
+  });
 
-    export default mongoose.models.Cart || mongoose.model('Cart', CartSchema);
-    ```
+  export default mongoose.models.Cart || mongoose.model('Cart', CartSchema);
+  ```
 - **Create a cart for new user upon signup:**
-  - In pages/api/signup.js file:
-    - Import Cart model
-    - Before generating a token for the new user, create a cart for them. Save the new cart instance to the db
-    ```js
-    import Cart from '../../models/Cart';
+- In pages/api/signup.js file:
+  - Import Cart model
+  - Before generating a token for the new user, create a cart for them. Save the new cart instance to the db
+  ```js
+  import Cart from '../../models/Cart';
 
-		const cart = await new Cart({ user: newUser._id });
-		cart.save();
-    ```
+  const cart = await new Cart({ user: newUser._id });
+  cart.save();
+  ```
 - Now in MongoBD, when a new user document is created a cart document is also created that has a user field associated with the user ObjectId
 
 
@@ -1449,153 +1451,153 @@
 - On our custom App page(_app.js file) we have a `getInitialProps` method that gets called for each of our page components. This App component is executed on the server and it's executed before anything else. The `getInitialProps` method in this custom App component gets executed when page changes
 - So this is the ideal place to fetch our user's data from token and pass it down to each of our page components and the page layout as props
 - **Client-side: get user's account data from token:**
-  - In pages/_app.js file:
-    - From the context object we're able to information about the request and response because the App component is being executed on the server
-    - And with that we'll be able to get all of the cookies
-    - We're going to use a package called nookies that's going to allow us to take the context object and get from it all of the cookies, so that we can use that to make a request to send back the user to our app
-    - Import the parseCookies function from nookies
-    - Call parseCookies() and pass in context object as an argument. What we get back is cookies object
-    - In this cookies object is the token property that we want. So we can destructure token from cookies
-    - So now after we execute `getInitialProps` for each page component, we can check to see if the current user has a token
-    - If no token, they are not an authenticated user. Hence they should not be able to access certain pages
-    - Write an if statement that checks if current user is unauthenticated (no token) and if they are on a protected route (such as /create or /account), redirect the user using the redirectUser helper function
-    - Import redirectUser helper function
-    - If current user is authenticated (with token), make a request to get the user's account data from token
-      - Use the try/catch block since we're making a request to an end point
-      - The payload we provide is a little different. When it comes to providing a token, we're not going to pass it on a request body. If we need to provide a jsonwebtoken(jwt) for authorization, what we're providing is what's known as an authorization headers
-      - So within the payload object, we're going to include an object call `headers`. This headers has a property called `Authorization` and it's going to be set to `token` that we're getting from cookies object
-      - Import axios and baseUrl helper
-      - Then specify a url and use axios to make a GET request
-      - If the request is successful, what we get back is the user object from the database. Assign this user to pageProps.user
-    - Pass the pageProps object as props to each page components and Layout component. Now every page routes has access to this user data
-    ```js
-    import { parseCookies } from 'nookies';
-    import { redirectUser } from '../utils/auth';
-    import axios from 'axios';
-    import baseUrl from '../utils/baseUrl';
+- In pages/_app.js file:
+  - From the context object we're able to information about the request and response because the App component is being executed on the server
+  - And with that we'll be able to get all of the cookies
+  - We're going to use a package called nookies that's going to allow us to take the context object and get from it all of the cookies, so that we can use that to make a request to send back the user to our app
+  - Import the parseCookies function from nookies
+  - Call parseCookies() and pass in context object as an argument. What we get back is cookies object
+  - In this cookies object is the token property that we want. So we can destructure token from cookies
+  - So now after we execute `getInitialProps` for each page component, we can check to see if the current user has a token
+  - If no token, they are not an authenticated user. Hence they should not be able to access certain pages
+  - Write an if statement that checks if current user is unauthenticated (no token) and if they are on a protected route (such as /create or /account), redirect the user using the redirectUser helper function
+  - Import redirectUser helper function
+  - If current user is authenticated (with token), make a request to get the user's account data from token
+    - Use the try/catch block since we're making a request to an end point
+    - The payload we provide is a little different. When it comes to providing a token, we're not going to pass it on a request body. If we need to provide a jsonwebtoken(jwt) for authorization, what we're providing is what's known as an authorization headers
+    - So within the payload object, we're going to include an object call `headers`. This headers has a property called `Authorization` and it's going to be set to `token` that we're getting from cookies object
+    - Import axios and baseUrl helper
+    - Then specify a url and use axios to make a GET request
+    - If the request is successful, what we get back is the user object from the database. Assign this user to pageProps.user
+  - Pass the pageProps object as props to each page components and Layout component. Now every page routes has access to this user data
+  ```js
+  import { parseCookies } from 'nookies';
+  import { redirectUser } from '../utils/auth';
+  import axios from 'axios';
+  import baseUrl from '../utils/baseUrl';
 
-    // App component is executed on the server and is executed before anything else
-    class MyApp extends App {
-      // We have access to request and response from context object
-      static async getInitialProps({ Component, ctx }) {
-        // What's returned from parseCookies is cookies object
-        // Destructure the token property from it
-        const { token } = parseCookies(ctx);
-        let pageProps = {};
+  // App component is executed on the server and is executed before anything else
+  class MyApp extends App {
+    // We have access to request and response from context object
+    static async getInitialProps({ Component, ctx }) {
+      // What's returned from parseCookies is cookies object
+      // Destructure the token property from it
+      const { token } = parseCookies(ctx);
+      let pageProps = {};
 
-        // first check to see if there exists an initial props of a given component
-        // if there is, execute the function that accepts context object as an argument
-        // this is an async operation
-        // assign the result to pageProps object
-        if (Component.getInitialProps) {
-          // Execute getInitalProps for each page component
-          pageProps = await Component.getInitialProps(ctx);
-        }
-
-        // Check to see if current user has a token
-        if (!token) {
-          const isProtectedRoute =
-            ctx.pathname === '/account' || ctx.pathname === '/create';
-          // If user is unauthenticated and is on a protected route, redirect user to login page
-          if (isProtectedRoute) {
-            redirectUser(ctx, '/login');
-          }
-        } else {
-          // Make a request to get the user's account data from token
-          try {
-            const payload = { headers: { Authorization: token } };
-            const url = `${baseUrl}/api/account`;
-            const response = await axios.get(url, payload);
-            const user = response.data;
-            // Pass the user to the  pageProps user object
-            // The pageProps will then pass to every page components and Layout component
-            pageProps.user = user;
-          } catch (error) {
-            console.error('Error getting current user', error);
-          }
-        }
-
-        // console.log(pageProps.user)
-        return { pageProps };
+      // first check to see if there exists an initial props of a given component
+      // if there is, execute the function that accepts context object as an argument
+      // this is an async operation
+      // assign the result to pageProps object
+      if (Component.getInitialProps) {
+        // Execute getInitalProps for each page component
+        pageProps = await Component.getInitialProps(ctx);
       }
 
-      // destructure pageProps object that's returned from getInitialProps function
-      // the <Component /> is the component of each page
-      // each page component now has access to the pageProps object
-      render() {
-        const { Component, pageProps } = this.props;
-        return (
-          <Layout {...pageProps}>
-            <Component {...pageProps} />
-          </Layout>
-        );
-      }
-    }
-    ```
-  - In utils/auth.js file:
-    - Write a redirectUser helper function that redirects the user on the server or on client side
-      - This function accepts two arguments
-      - 1st arg is the context object. Also have access to req and res objects of context
-      - 2nd arg is the location - the path to redirect to
-    ```js
-    export function redirectUser(ctx, location) {
-      // If we have access to context, the request is on the server
-      // If we get a request on the server, redirect on the server
-      if (ctx.req) {
-        // Redirecting on the server with Node
-        ctx.res.writeHead(302, { Location: location });
-        // To stop writing to this response
-        ctx.res.end();
+      // Check to see if current user has a token
+      if (!token) {
+        const isProtectedRoute =
+          ctx.pathname === '/account' || ctx.pathname === '/create';
+        // If user is unauthenticated and is on a protected route, redirect user to login page
+        if (isProtectedRoute) {
+          redirectUser(ctx, '/login');
+        }
       } else {
-        // Redirect on the client
-        Router.push(location);
-      }
-    }
-    ```
-- **Server-side: create user account route handler:**
-  - In pages/api/account.js file:
-    - Since we want to get a user, we're going to interact with the User model. Import User model
-    - Import connectDB helper since we need to connect to the db
-    - Import jwt
-    - First thing is check to see the authorization headers is provided with the request
-    - If there isn't, we want to return early. If there is, then we have a token that we can use to verify the user
-    - Use the jwt.verify() method to verify the provided token
-    ```js
-    import jwt from 'jsonwebtoken';
-    import User from '../../models/User';
-    import connectDB from '../../utils/connectDb';
-
-    connectDB();
-
-    export default async (req, res) => {
-      // Check if authorization headers is provided with the request
-      // If not, we want to return early`
-      if (!('authorization' in req.headers)) {
-        return res.status(401).send('No authorization token'); //401 means not permitted
-      }
-
-      try {
-        // jwt.verify() method verifies the token
-        // 1st arg is the provided token
-        // 2nd arg is the jwt secret which we use to sign the token
-        // what's returned is an object. Destructure the userId property from it
-        const { userId } = jwt.verify(
-          req.headers.authorization,
-          process.env.JWT_SECRET
-        );
-        // Use the returned userId to find a user in the database
-        const user = await User.findOne({ _id: userId });
-        if (user) {
-          // If user is found, return the user to the client
-          res.send(200).json(user);
-        } else {
-          res.status(404).send('User not found');
+        // Make a request to get the user's account data from token
+        try {
+          const payload = { headers: { Authorization: token } };
+          const url = `${baseUrl}/api/account`;
+          const response = await axios.get(url, payload);
+          const user = response.data;
+          // Pass the user to the  pageProps user object
+          // The pageProps will then pass to every page components and Layout component
+          pageProps.user = user;
+        } catch (error) {
+          console.error('Error getting current user', error);
         }
-      } catch (error) {
-        res.status(403).send('Invalid token'); //403 means forbidden action
       }
-    };
-    ```
+
+      // console.log(pageProps.user)
+      return { pageProps };
+    }
+
+    // destructure pageProps object that's returned from getInitialProps function
+    // the <Component /> is the component of each page
+    // each page component now has access to the pageProps object
+    render() {
+      const { Component, pageProps } = this.props;
+      return (
+        <Layout {...pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      );
+    }
+  }
+  ```
+- In utils/auth.js file:
+  - Write a redirectUser helper function that redirects the user on the server or on client side
+    - This function accepts two arguments
+    - 1st arg is the context object. Also have access to req and res objects of context
+    - 2nd arg is the location - the path to redirect to
+  ```js
+  export function redirectUser(ctx, location) {
+    // If we have access to context, the request is on the server
+    // If we get a request on the server, redirect on the server
+    if (ctx.req) {
+      // Redirecting on the server with Node
+      ctx.res.writeHead(302, { Location: location });
+      // To stop writing to this response
+      ctx.res.end();
+    } else {
+      // Redirect on the client
+      Router.push(location);
+    }
+  }
+  ```
+- **Server-side: create user account route handler:**
+- In pages/api/account.js file:
+  - Since we want to get a user, we're going to interact with the User model. Import User model
+  - Import connectDB helper since we need to connect to the db
+  - Import jwt
+  - First thing is check to see the authorization headers is provided with the request
+  - If there isn't, we want to return early. If there is, then we have a token that we can use to verify the user
+  - Use the jwt.verify() method to verify the provided token
+  ```js
+  import jwt from 'jsonwebtoken';
+  import User from '../../models/User';
+  import connectDB from '../../utils/connectDb';
+
+  connectDB();
+
+  export default async (req, res) => {
+    // Check if authorization headers is provided with the request
+    // If not, we want to return early`
+    if (!('authorization' in req.headers)) {
+      return res.status(401).send('No authorization token'); //401 means not permitted
+    }
+
+    try {
+      // jwt.verify() method verifies the token
+      // 1st arg is the provided token
+      // 2nd arg is the jwt secret which we use to sign the token
+      // what's returned is an object. Destructure the userId property from it
+      const { userId } = jwt.verify(
+        req.headers.authorization,
+        process.env.JWT_SECRET
+      );
+      // Use the returned userId to find a user in the database
+      const user = await User.findOne({ _id: userId });
+      if (user) {
+        // If user is found, return the user to the client
+        res.send(200).json(user);
+      } else {
+        res.status(404).send('User not found');
+      }
+    } catch (error) {
+      res.status(403).send('Invalid token'); //403 means forbidden action
+    }
+  };
+  ```
 - In components/_App/Layout.js component, receive and destructure the user props. Pass down the user props to the Header component
 - In components/_App/Header.js component, receive and destructure the user props
 - Now when an unauthenticated user tries to visit the /account or /create routes, they will be redirected to login page
@@ -2881,7 +2883,7 @@
   };
   ```
  
-**### 4. Change User Roles, Permissions**
+**4. Change User Roles, Permissions**
 - Next we want to enable the root user to dynamically change the users roles by toggling the checkbox next to the user
 - To do this, we want to keep track of a user state in the UserPermission component. Whenever the user's role changes on the client-side(the root uses makes the change), we want to make a request to an endpoint to change the user's role in the database
 - In components/Account/AccountPermission.js file and inside the UserPermission component:

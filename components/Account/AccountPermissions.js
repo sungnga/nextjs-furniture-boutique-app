@@ -17,7 +17,7 @@ function AccountPermissions() {
 		const token = cookie.get('token');
 		const payload = { headers: { Authorization: token } };
 		const response = await axios.get(url, payload);
-		// console.log(response.data)
+		// What's returned in the response.data is an array of users, except the root user
 		setUsers(response.data);
 	}
 	return (
