@@ -1,4 +1,5 @@
 import Product from '../../models/Product';
+import Cart from '../../models/Cart';
 import connectDB from '../../utils/connectDb';
 
 connectDB();
@@ -52,5 +53,25 @@ async function handlePostRequest(req, res) {
 	} catch (error) {
 		console.error(error);
 		res.status(500).send('Server error in creating product');
+	}
+}
+
+async function handleDeleteRequest(req, res) {
+	try {
+		const { _id } = req.query;
+		// 1) Delete product by id
+		await Product.findOneAndDelete({ _id });
+		// 2) Remove product from all carts, referenced as 'product'
+		await Cart.updateMany(
+			// The reference we want to remove from all cart documents
+			{ 'products.product': _id },
+			// The pull operator pulls the product by id from products array
+			{ $pull: { products: { product: _id } } }
+		);
+		// status code 204 means success and no content is sent back
+		res.status(204).json({});
+	} catch (error) {
+		console.error(error);
+		res.status(500).send('Error deleting product');
 	}
 }

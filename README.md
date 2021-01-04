@@ -3017,6 +3017,37 @@
 - Import and use the formatDate function on our dates in AccountHeader.js, AccountOrders.js, and AccountPermissions.js components
   - Example: `<Table.Cell>{formatDate(user.createdAt)}</Table.Cell>`
 
+**3. Cascade Delete upon Document Removal**
+- A cascade delete is when you delete a given document, you want to remove all the places where you have references
+- For example, when we delete a product, we want to remove the product in all carts
+- In pages/api/product.js file:
+  - Import the Cart model
+  - In handleDeleteRequest function:
+    - Call the .updateMany() method on Cart model
+    - Provide it an object to specify the filter and what we want to update
+    - Use the `$pull` operator to pull the product by id in the products array
+  ```js
+  async function handleDeleteRequest(req, res) {
+    try {
+      const { _id } = req.query;
+      // 1) Delete product by id
+      await Product.findOneAndDelete({ _id });
+      // 2) Remove product from all carts, referenced as 'product'
+      await Cart.updateMany(
+        // The reference we want to remove from all cart documents
+        { 'products.product': _id },
+        // The pull operator pulls the product by id from products array
+        { $pull: { products: { product: _id } } }
+      );
+      // status code 204 means success and no content is sent back
+      res.status(204).json({});
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error deleting product');
+    }
+  }
+  ```
+
 
 
 
