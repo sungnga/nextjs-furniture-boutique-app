@@ -3092,6 +3092,47 @@
   - https://furnitureboutique.vercel.app
 
 
+### PRODUCTION DEPLOYMENT TO HEROKU
+- **Create a project on Heroku:**
+  - In project root directory, use Heroku CLI login to Heroku: `heroku login`
+  - Once successfully logged in, create a project. Run: `heroku create furnitureboutique`
+  - Link to Furniture Boutique app is provided: https://furnitureboutique.herokuapp.com/
+- **Configure production base URL:**
+  - In utils/baseUrl.js file:
+    - Provide the production url for making requests
+    ```js
+    const baseUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'https://furnitureboutique.herokuapp.com'
+        : 'http://localhost:3000';
+
+    export default baseUrl;
+    ```
+- **Configure run script in package.json file:**
+  - Specify the start script exactly as shown
+  ```json
+  "scripts": {
+    "dev": "next",
+    "start": "next start -p $PORT",
+    "build": "next build"
+  }
+  ```
+- **Deploy to Heroku:**
+  - Add all files to Git: `git add .`
+  - To commit: `git commit -m "Initial commit"`
+  - Push to Heroku: `git push heroku main`
+  - To restart Heroku app: `heroku restart`
+
+- **Commit changes to Heroku repo:**
+  - Make sure there's a heroku remote: `git remote -v`
+  - Git add, git commit with a message, and push to `git push heroku main`
+
+
+### Furniture Boutique websites:
+- Heroku: https://furnitureboutique.herokuapp.com/
+- Localhost: http://localhost:3000
+- Product images are stored on Cloudinary storage
+- Cloud database is stored on MongoBD Atlas. Project name is FurnitureBoutique
 
 
 ## RESOURCES
@@ -3099,6 +3140,7 @@
 - Semantic UI docs: https://react.semantic-ui.com/
 - Stripe docs: https://stripe.com/docs/payments/checkout/migration
 - Vercel app deployment service: https://vercel.com/
+
 
 ## NPM PACKAGES USED IN THIS PROJECT
 - react, react-dom
