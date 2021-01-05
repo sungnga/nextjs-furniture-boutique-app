@@ -2475,7 +2475,7 @@
   export async function getServerSideProps(ctx) {
     // console.log(ctx.query)
     // Check to see if page query is available
-    const page = ctx.query.page ? '' : '1';
+    const page = ctx.query.page ? ctx.query.page : '1';
     // size is the number of products on a page
     const size = 9;
     // fetch data on server
@@ -2539,7 +2539,7 @@
       // limit the number of products getting back from db by pageSize
       products = await Product.find().limit(pageSize);
     } else {
-      const skips = pageSize * (pageNum - 1) * -1;
+      const skips = pageSize * (pageNum - 1);
       products = await Product.find().skip(skips).limit(pageSize);
     }
     // const products = await Product.find();
@@ -3051,6 +3051,46 @@
   ```
 
 
+### PRODUCTION DEPLOYMENT TO VERCEL
+- **Setup a vercel account:**
+  - The company that makes Next.js also has a deployment service called vercel
+  - vercel website: https://vercel.com/
+  - Signup for an account
+  - Install globally to use vercel cli: `sudo npm i -g vercel` 
+  - Login to vercel account in cli: `vercel login`
+  - Provide email and verify the login from your email account
+- **Configure the vercel.json file:**
+  - In vercel.json file:
+    - Provide the environment variables
+    ```json
+    {
+      "env": {
+        "MONGO_SRV": "<insert-mongo-srv>",
+        "JWT_SECRET": "<insert-jwt-secret>",
+        "CLOUDINARY_URL": "<insert-cloudinary-url>",
+        "STRIPE_SECRET_KEY": "<insert-stripe-secret-key>"
+      }
+    }
+    ```
+- **Configure production base URL:**
+  - In utils/baseUrl.js file:
+    - Provide the production url for making requests
+    ```js
+    const baseUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'https://furnitureboutique.vercel.app'
+        : 'http://localhost:3000';
+
+    export default baseUrl;
+    ```
+- **Deploying our app to vercel:**
+  - Run in the terminal: `vercel`
+  - Follow the instruction prompts for setting up the project
+- **To deploy to production:**
+  - Run: `vercel --prod`
+- **Link to Furniture Boutique app:**
+  - https://furnitureboutique.vercel.app
+
 
 
 
@@ -3058,6 +3098,7 @@
 - Next.js docs: https://nextjs.org/docs/getting-started
 - Semantic UI docs: https://react.semantic-ui.com/
 - Stripe docs: https://stripe.com/docs/payments/checkout/migration
+- Vercel app deployment service: https://vercel.com/
 
 ## NPM PACKAGES USED IN THIS PROJECT
 - react, react-dom

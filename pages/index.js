@@ -18,7 +18,7 @@ function Home({ products, totalPages }) {
 // This props object can be passed to a component prior to the component mounts
 // It's an async function
 // NOTE: getServerSideProps does the same thing as getInitialProps function
-export async function getServerSideProps(ctx) {
+Home.getInitialProps = async ctx => {
 	// console.log(ctx.query)
 	// Check to see if page query is available
 	const page = ctx.query.page ? ctx.query.page : '1';
@@ -31,7 +31,7 @@ export async function getServerSideProps(ctx) {
 	const response = await axios.get(url, payload);
 	// The return response.data object contains products array and totalPages
 	// note: this object will be merged with existing props
-	return { props: response.data };
+	return response.data;
 }
 
 export default Home;

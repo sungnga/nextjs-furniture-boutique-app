@@ -15,12 +15,12 @@ function Layout({ children, user }) {
 				<link rel='stylesheet' type='text/css' href='/static/nprogress.css' />
 				<link
 					rel='stylesheet'
-					href='//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.css'
+					href="//cdn.jsdelivr.net/npm/semantic-ui@${props.versions.sui}/dist/semantic.min.css"
 				/>
 				<title>Furniture Boutique</title>
 			</Head>
 			<Header user={user} />
-			<Container text style={{ paddingTop: '1em' }}>
+			<Container text style={{ padding: '1em 0' }}>
 				{children}
 			</Container>
 		</Fragment>
