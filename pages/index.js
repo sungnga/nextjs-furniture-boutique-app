@@ -21,7 +21,7 @@ function Home({ products, totalPages }) {
 export async function getServerSideProps(ctx) {
 	// console.log(ctx.query)
 	// Check to see if page query is available
-	const page = ctx.query.page ? '' : '1';
+	const page = ctx.query.page ? ctx.query.page : '1';
 	// size is the number of products on a page
 	const size = 9;
 	// fetch data on server
