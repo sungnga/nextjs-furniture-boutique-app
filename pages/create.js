@@ -9,6 +9,9 @@ import {
 	Message,
 	Icon
 } from 'semantic-ui-react';
+import axios from 'axios';
+import baseUrl from '../utils/baseUrl';
+import catchErrors from '../utils/catchErrors';
 
 const INITIAL_PRODUCT = {
 	name: '',
@@ -16,9 +19,6 @@ const INITIAL_PRODUCT = {
 	media: '',
 	description: ''
 };
-import axios from 'axios';
-import baseUrl from '../utils/baseUrl';
-import catchErrors from '../utils/catchErrors';
 
 function CreateProduct() {
 	const [product, setProduct] = useState(INITIAL_PRODUCT);
@@ -26,7 +26,7 @@ function CreateProduct() {
 	const [success, setSuccess] = useState(false);
 	const [loading, setLoading] = useState(false);
 	// Disable the Submit button. By default, it's disabled
-	const [disabled, setDiasbled] = useState(true);
+	const [disabled, setDisabled] = useState(true);
 	const [error, setError] = useState('');
 
 	// Whenever the product state changes, run the useEffect function
@@ -36,7 +36,7 @@ function CreateProduct() {
 		// For every element in every() method, call the Boolean method on it
 		// The Boolean method will return true or false if the element is empty or not
 		const isProduct = Object.values(product).every((el) => Boolean(el));
-		isProduct ? setDiasbled(false) : setDiasbled(true);
+		isProduct ? setDisabled(false) : setDisabled(true);
 	}, [product]);
 
 	function handleChange(event) {
