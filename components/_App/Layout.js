@@ -15,7 +15,7 @@ function Layout({ children, user }) {
 				<link rel='stylesheet' type='text/css' href='/static/nprogress.css' />
 				<link
 					rel='stylesheet'
-					href="//cdn.jsdelivr.net/npm/semantic-ui@${props.versions.sui}/dist/semantic.min.css"
+					href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.css"
 				/>
 				<title>Furniture Boutique</title>
 			</Head>
