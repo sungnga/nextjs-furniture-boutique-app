@@ -5,7 +5,6 @@ import { redirectUser } from '../utils/auth';
 import axios from 'axios';
 import baseUrl from '../utils/baseUrl';
 import Router from 'next/router';
-import 'semantic-ui-css/semantic.min.css'
 
 // App component is executed on the server and is executed before anything else
 class MyApp extends App {
