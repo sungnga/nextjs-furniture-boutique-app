@@ -1,10 +1,9 @@
-# MY NOTES WHEN BUILDING THIS WEB APP
+# STEPS AND NOTES TO BUILDING THIS WEB APP
 
 ### PROJECT SETUP
-- Download the starter project directory from https://github.com/reedbarger/react-reserve
 - Install and update the project dependencies by running:
-  - `npm install`
-  - then `npm update`
+  - `npx npm-check-updates -u`
+  - then `npm install`
 - To start up Next.js server and the project, run: `npm run dev`
 
 
