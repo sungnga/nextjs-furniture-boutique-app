@@ -1,17 +1,23 @@
-# STEPS AND NOTES TO BUILDING THIS WEB APP
+### How to use:
+- Install the project dependencies by running:
+  - `npm install`
+- To start up the Next.js dev server, run:
+  - `npm run dev`
 
-### PROJECT SETUP
-- Install and update the project dependencies by running:
-  - `npx npm-check-updates -u`
-  - then `npm install`
-- To start up Next.js server and the project, run: `npm run dev`
+  
+## NOTES AND STEPS TO BUILDING THIS APPLICATION
+The codebase for each step can be found in the commit link
 
 
-### WORKING WITH REACT + NEXT.JS
-**1. Create App Layout Component, Build Header Component**
+## WORKING WITH REACT + NEXT.JS
+
+### [0. Setup project file structure with starter files](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/2a508ef9c681d25cacd1ad6c14b076458917faa7?ts=2)
+- static/products.json file contains product data we will use for our furniture store
+
+### [1. Create app Layout component, build Header component](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/69f1ed3678118096bdb787ba30cc6f80b90b3d33?ts=2)
 - The Layout component is wrapped around the `<Component />` in _app.js file. This will override the default App.js and the layout defined in the Layout component will persist on every page
 - Include the Semantic-UI-React stylesheet in Layout.js file
-- The Layout component renders the HeadContent, Header Components, and children components
+- The Layout component renders the HeadContent, Header components, and children components
 - All the contents inside the Layout component will be rendered on every page. For example, the Header component which contains the navbar will be rendered on every page
 - The Header component contains the navbar menu with links that takes user to that particular page
   - Use Link component provided by Next.js to create the links
@@ -21,7 +27,7 @@
   - If user is logged in, show the Account link and Logout button 
   - Use Semantic UI to style the Header component
 
-**2. Get Route Data From useRouter Hook, Create Active Links**
+### [2. Get route data from useRouter hook, create active links](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/a2d94d7701df6fa0f161675a8a17487394908fe9?ts=2)
 - Since we're using a function component, Next provides a React useRouter() hook that gives us information from our router
 - `import { useRouter } from 'next/router'`
 - When execute, it will return a router object: `const router = useRouter()`
@@ -50,7 +56,7 @@
   }
   ```
 
-**3. Visualize Route Changes with Progress Bar**
+### [3. Visualize route changes with progress bar](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/60a3c73a07596ca3d23c4277ba25eb6ebe9a2a5b?ts=2)
 - It's always good to display to the users visually what's taking place within the application
 - We're going to display a progress bar when loading a new page or when fetching data
 - Install nprogress package: `npm i nprogress`
@@ -73,8 +79,9 @@
 - Style the progress bar in static/nprogress.css file and include the stylesheet in Layout.js file
 
 
-### CREATING API WITH NODE + NEXT SERVER
-**1. Node + Next Server with API Routes**
+## CREATING API WITH NODE + NEXT SERVER
+
+### [4. Working with Node and Next server with API routes](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/546016089f06f72a73376294d0f9642ae21f0044?ts=2)
 - In our home page in pages/index.js file, when the page loads (when the Home component mounts), we want to fetch the products with API and display them on the page
 - Whenever our application is interacting with the outside world, such as fetching data from the database, we can use React's useEffect() hook. Inside this hook, we can call a function that makes an API request
 - We will use axios, a tool to help make API requests
@@ -122,7 +129,7 @@
   };
   ```
 
-**2. Fetching Data on the Server with getInitialProps**
+### [5. Fetching data on the server with getInitialProps](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/9f9221d30108ad89e047a365c3b2e3b693722172?ts=2)
 - With client-side rendering, we would have to wait for the component to mount before we can fetch data. With Next.js, we can fetch data before the component mounts
 - We do this using Next's `getInitialProps` function
   - This is an async function
@@ -203,8 +210,9 @@
   - **Server-side Rendering:** The HTML is generated on **each request**. To make a page use Server-side Rendering, export `getServerSideProps`. Because Server-side Rendering results in slower performance than Static Generation, use this only if absolutely necessary
 
 
-### USING MONGODB WITH ATLAS
-**1. Configure Mongo Atlas, Connect to Database**
+## USING MONGODB WITH ATLAS
+
+### [6. Configure Mongo Atlas, connect to database with Mongoose](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/8654e20355898f7709e967b955cd4953d9140268?ts=2)
 - MongoDB Atlas: https://www.mongodb.com/cloud
 - Mongo Atlas is a cloud database service that can host our MongoDB database on a remote server
 - Once signed in to MongoDB Cloud, create a new project and choose the free tier. Name it FurnitureBoutique
@@ -276,7 +284,7 @@
 - If we're successfully connected to MongoDB, we should be able to see "DB Connected" logged in the console
 - Lastly, add the next.config.js file to the .gitignore file
 
-**2. Create Products Collection, Model Product Data**
+### [7. Create products collection, model Product data](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/92ef93837eb9047fbf01c766ebcd23537a734b4d?ts=2)
 - **Create products collection MongoDB by importing our static products data:**
   - On MongoBD project dashboard page, click on the Command Line Tools menu item at the top
   - In the Data Import and Export Tools section, copy the script for 'mongoimport'
@@ -352,7 +360,7 @@
     ```
 - Now when we make a request to `/api/products` endpoint, we should get back the products array coming from the MongoDB database
 
-**3. Build Product Cards, Make Components Responsive**
+### [8. Build Product Cards, make components responsive](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/411377ee48bad4fceb3be04c04156eb77cb78292?ts=2)
 - Semantic UI Card: https://react.semantic-ui.com/views/card/
 - We'll use Semantic UI Card component to style the products on our home page
 - The pages/index.js file renders the ProductList.js component
@@ -402,8 +410,9 @@
   ```
 
 
-### FETCHING APP DATA FROM API
-**1. Get Product By Id**
+## FETCHING APP DATA FROM API
+
+### [9. Get product by id from database](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/b6239563c3bb95d6d72f34e2a763b71525e7d836?ts=2)
 - When we click on a product, we want to direct user to the product detail page. We make an API request to get the product by its id
 - In Next.js, we're able to fetch data before the component mounts. So we can make use of Next's getInitialProps function to fetch the data
 - In pages/product.js file:
@@ -442,7 +451,7 @@
   };
   ```
 
-**2. Style Product Detail Page**
+### [10. Style product detail page](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/c25d852d75a68b089ee12f48d6b06ffc6ad3b3bc?ts=2)
 - We will use three components to create and style the product detail page
 - In components/Product folder:
   - ProductSummary.js - renders the AddProductToCart.js component
@@ -530,7 +539,7 @@
   export default AddProductToCart;
   ```
 
-**3. Base URL Helper**
+### [11. Adding a baseUrl helper function](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/7ff2c544e7a170381bddf9aea9bde05fc3c202d9?ts=2)
 - When we fetch data in a development environment, we make request to `http:localhost:3000` on local server. And when we're in production, we're going to use the deployment URL
 - Let's write a base URL helper function that detects whether we're in a production or development environment. We can dynamically determine this whether that's the case or not with the help of a environment variable
 - In utils/baseUrl.js file:
@@ -553,8 +562,9 @@
   ```
 
 
-### ADDING CRUD FUNCTIONALITY, UPLOADING IMAGE FILES
-**1. Delete A Product Functionality**
+## ADDING CRUD FUNCTIONALITY, UPLOADING IMAGE FILES
+
+### [12. Implement delete a product functionality](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/6b0b2b0267394d71e9ff532255c5d50929e4ccdc?ts=2)
 - When a user clicks on the Delete Product button, we want to display a modal asking the user to confirm the product deletion
 - The modal contains the cancel button and Delete button
 - To implement the modal functionality, we want to create a state for the modal to keep track of modal state in our application. We can use React useState() hook
@@ -657,7 +667,7 @@
   }
   ```
 
-**2. Building the Create Product Form**
+### [13. Building the Create Product form](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/3176dd0c39f9f6e86edf3179a67d0338a2a95c43?ts=2)
 - Let's build out the Create New Product form on the /create route (pages/create.js file) that enables user to create a product. They can provide product name, price, description, a product image, and upload a product image
 - When the user uploads a file image, we want to display a preview of the image they just uploaded
 - Once the user submitted the form, we can display a success message and clear the form input fields
@@ -768,7 +778,7 @@
   export default CreateProduct;
   ```
 
-**3. Upload Product Image, Post Product**
+### [14. Upload product image to Cloudinary, post product](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/c71b5474efbaad4ec0fdb9129652dd61e59977e1?ts=2)
 - **Create Cloudinary account, create upload preset:**
   - Cloudinary website: https://cloudinary.com/
   - Signup for a Cloudinary account
@@ -854,8 +864,9 @@
   ```
 
 
-### HANDLING ERRORS ON THE CLIENT AND SERVER
-**1. Prevent, Catch Errors on Client and Server Sides**
+## HANDLING ERRORS ON THE CLIENT AND SERVER
+
+### [15. Prevent, catch errors on client and server sides](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/5b286b66868c224087fa24726383b9df0e72caa4?ts=2)
 - A general guideline when taking care of problems within our app is we want to try to prevent errors on the client side before they can take place on the server side
 - **Prevent users from submitting empty product input fields:**
   - As the current state of our app it's possible to submit a product form without all its fields filled out and this would naturally cause an error on the server
@@ -1008,7 +1019,7 @@
   }
   ```
 
-**2. Structure Cart Page**
+### [16. Structure the cart page](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/2ee107beca9c619911c8c4265b66f15aee75e640?ts=2)
 - The cart page route consists of a section that displays a list of products in their shopping cart and a section that displays the subtotal and a checkout button
 - In pages/cart.js file:
   - The cart route renders the CartItemList and CartSummary components
@@ -1079,8 +1090,9 @@
   ```
 
 
-### AUTHENTICATING USERS WITH JWT + COOKIES
-**1. Build Login and Signup Forms**
+## AUTHENTICATING USERS WITH JWT + COOKIES
+
+### [17. Build Login and Signup forms](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/523d321b6ca02175166fd35f939b6cff82a61a31?ts=2)
 - Both the Login and Signup forms have very similar functionality as the Create New Product form
 - The Signup form has input fields of name, email, and password and a submit button
 - The Login form has input fields of name and password and a submit button
@@ -1137,7 +1149,7 @@
     )
   ```
 
-**2. Model User, Signup User with JWT and Cookies**
+### [18. Create User model, signup user with JWT and cookies](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/677a301a2166c43a4f2cf567d1837cc1a285555e?ts=2)
 - When a user signs up by submitting the Signup form, we want to create a new user and store it in a users collection in the database. We want to create a User model that defines what a user document would look like
 - If a new user is successfully created, what's returned to the client from the server is a jsonwebtoken. We then use this token to set a cookie in the browser so that we can identify this client as an authenticated user
 - **Client-side: make a request to signup user endpoint:**
@@ -1286,7 +1298,7 @@
   }
   ```
 
-**3. Validate POST Content on Server Side**
+### [19. Validate POST content on server side](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/5a2793a4439d354e61b8bde00be2ebbef08ec15e?ts=2)
 - Right now users can enter anything they want in the input fields when they sign up. We want to set some constraints on the name, email, and password fields. We want to validate on the server side the values that are provided on the request body and then send an error back to the client and display it to users if it doesn't meet the conditions that we set
 - We're going to use a tool called validator to help us validate forms
 - Import validator: `npm i validator`
@@ -1305,7 +1317,7 @@
   }
   ```
 
-**4. Add Login Functionality**
+### [20. Add login functionality](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/5f4b82efd9e16fe27e064f63ca0a66ed60c87bee?ts=2)
 - **Client-side: make a request to login user endpoint**
 - In pages/login.js file:
   - Import axios and baseUrl helper 
@@ -1395,7 +1407,7 @@
   }
   ```
 
-**5. Create User Cart Upon Signup**
+### [21. Create user cart upon signup](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/25ce7cb88ba94d028d2daa4de05b719b1a4fb72e?ts=2)
 - After a user sign up and when we create a document for them in the database, we need to link the user document with a cart document in the database
 - So first we need to build a Cart model to define what a cart document has
   - One of the fields of the cart document is the user field
@@ -1443,8 +1455,9 @@
 - Now in MongoBD, when a new user document is created a cart document is also created that has a user field associated with the user ObjectId
 
 
-### AUTHORIZATION AND PROTECTING CONTENT
-**1. Get Current User from Token, Protect Auth Routes**
+## AUTHORIZATION AND PROTECTING CONTENT
+
+### [22. Get current user from token, protect auth routes](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/d494576b3ab3cacb2d2b6af2e3bb793bd1d64360?ts=2)
 - Install nookies: `npm i nookies`
 - Once a user signup or login to our application they can see different parts of the app depending on permission that they have
 - On our custom App page(_app.js file) we have a `getInitialProps` method that gets called for each of our page components. This App component is executed on the server and it's executed before anything else. The `getInitialProps` method in this custom App component gets executed when page changes
@@ -1602,7 +1615,7 @@
 - Now when an unauthenticated user tries to visit the /account or /create routes, they will be redirected to login page
 - If a user is successfully logged in, they will be able to see and access the Create and Account links in the navbar
 
-**2. Handle Invalid Auth Tokens**
+### [23. Handle invalid auth tokens](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/faee2f5f420931119b3be3653451d923e4208228?ts=2)
 - If the user's token has been expired or has been tampered with or somehow malfunctioned, we want to delete the invalid token and redirect user to login page so they can login again
 - In page/_app.js file:
   - Import destroyCookie function from nookies
@@ -1620,7 +1633,7 @@
   }
   ```
 
-**3. Protect Admin Routes, Hide Protected Content**
+### [24. Protect admin routes, hide protected content](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/8820b6baddd529f8e6c9882e93e1e1026775f9d4?ts=2)
 - Users may have permission to certain pages depending on their role. For example, a user with the role of "user" does not have permission to create a product. Only admin users and root users have permission to create route. So for regular users, the Create link in the navbar will be hidden
 - In page/_app.js file:
   - If a user is not an admin or root user and is on /create route, redirect them to home page
@@ -1674,7 +1687,7 @@
   )}
   ```
 
-**4. Logout User**
+### [25. Implement logout user](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/608047cfbe1ec6f4213a0a599a48d05fa68f3a02?ts=2)
 - In utils/auth.js file:
   - Write a handleLogout function that logs out a user
   - Call the cookie.remove() method to remove the token from cookie
@@ -1699,7 +1712,7 @@
   </Menu.Item>
   ```
 
-**5. Universal Logout Using LocalStorage**
+### [26. Universal logout using localStorage](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/50a3ddaaefbab5119b7602a755b4350b273d13d3?ts=2)
 - When a user logs out of our application, we want to log them out everywhere, not just one browser window. We can perform a universal logout using localStorage
 - In utils/auth.js file:
   - In the handleLogout function, store the key "logout" in localStorage
@@ -1729,8 +1742,9 @@
   ```
 
 
-### CART MANAGEMENT AND CHECKOUT
-**1. Fetch User Cart**
+## CART MANAGEMENT AND CHECKOUT
+
+### [27. Fetch user cart data](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/5751ab88aa8ef2341d910594482ef1c4d187ee62?ts=2)
 - Let's fetch the user's cart in the database on the cart route. When the cart page loads, use getInitialProps function to make an api request to get cart data and display it on the cart page
 - In pages/cart.js file:
   - Import parseCookies function, axios, and baseUrl helper
@@ -1807,7 +1821,7 @@
   };
   ```
 
-**2. Add Products to Cart Functionality**
+### [28. Add products to cart functionality](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/8a17456c6a90fd0485d9162a5005c97f320631c5?ts=2)
 - **Implement functionality that allows user to add a product to cart:**
 - In components/Product/AddProductToCart.js file:
   - Enable user to change quantity of the product
@@ -1982,7 +1996,7 @@
   }
   ```
 
-**3. Style Cart Products**
+### [29. Style cart products on cart route](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/f2aa78336b0b36f90a094abbb78e678d4160b874?ts=2)
 - Now that users can add products to their cart, we want to display a summary of those added products in their cart route/page with a list
 - In pages/cart.js file:
   - Pass the user and products props down to the CartItemList child component
@@ -2054,7 +2068,7 @@
   export default CartItemList;
   ```
 
-**4. Calculate Cart Total**
+### [30. Calculate cart total](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/ddf2d09938e36791861a2426f7a399368513b490?ts=2)
 - In pages/cart.js file:
   - Pass the products props down to the CartSummary child component
   - `<CartSummary products={products} />`
@@ -2127,7 +2141,7 @@
   export default calculateCartTotal;
   ```
 
-**5. Removing Cart Products**
+### [31. Removing cart products](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/21edb87746d8eecb59b033f2a21ab593e021cc50?ts=2)
 - To delete a product from cart, we need to make a delete request for our cart endpoint
 - In pages/cart.js file:
   - Import cookie from js-cookie
@@ -2211,7 +2225,7 @@
   - When the Remove button is clicked, call the handleRemoveFromCart function and pass in the product id as an argument
     - `onClick={() => handleRemoveFromCart(p.product._id)}`
 
-**6. Checkout Customer Cart with Stripe Payment**
+### [32. Checkout customer cart with Stripe payment](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/d99bd7615f410bede9f98235b324a3729bbf8d84?ts=2)
 - Install react-stripe-checkout and stripe: `npm i react-stripe-checkout stripe`
 - Now we want users to be able to checkout their cart. They will provide their email, shipping info, and payment info. Once that is done, Stripe is going to approve their purchase and we can show a success message and clear out their cart
 - **Setup Stripe account:**
@@ -2445,8 +2459,9 @@
   ```
 
 
-### PAGINATION AND MANAGING USER ROLES
-**1. Add Pagination for Product List**
+## PAGINATION AND MANAGING USER ROLES
+
+### [33. Add pagination for product list](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/edbef717ee77630de3ad284e1209464d779b3908?ts=2)
 - Let's divide up our product list into multiple pages instead of having them all in a single page
 - **Client-side: make request to /products endpoint with page query params**
 - In pages/index.js file:
@@ -2546,7 +2561,7 @@
   };
   ```
 
-**2. Create Account Header, Order History**
+### [34. Create cccount header, order history on account route](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/daea87f9ae1465e9ab6342b51571f79a48e52cbb?ts=2)
 - The account route/page displays the user's account header (their name, email, joined date), order history, and user permissions
 - **Client-side: make request to /orders endpoint to get orders data:**
 - In pages/account.js file:
@@ -2748,7 +2763,7 @@
   };
   ```
 
-**3. Create Root User, Add User Permissions**
+### [35. Create root user, add User Permissions component](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/5257be351c7fcfb9f75b3b1d8d40a2bcf5543709?ts=2)
 - Up until this point we haven't given user other roles other than the 'user' role. This is the default value they're given when they signup
 - A root user can manage admin and regular users roles. They have access to the User Permissions panel to change users' roles in the database
   - There's only one root user and this user is going to have access to the database
@@ -2882,7 +2897,7 @@
   };
   ```
  
-**4. Change User Roles, Permissions**
+### [36. Change user roles, permissions on client and server](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/27269a3f8b2189881cdf9845b7d89ab5405c9576?ts=2)
 - Next we want to enable the root user to dynamically change the users roles by toggling the checkbox next to the user
 - To do this, we want to keep track of a user state in the UserPermission component. Whenever the user's role changes on the client-side(the root uses makes the change), we want to make a request to an endpoint to change the user's role in the database
 - In components/Account/AccountPermission.js file and inside the UserPermission component:
@@ -2983,8 +2998,9 @@
   ```
 
 
-### POLISHING OUR APP
-**1. Sorting in Mongoose, MongoDB**
+## POLISHING OUR APP
+
+### [37. Sorting in Mongoose, MongoDB](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/4839cf84a24fabc6d13553d75381d80dbb01847d?ts=2)
 - In MongoDB, we can sort a set of documents after a given query (such as the find method) by chaining on the .sort() method
 - Sort order history by descending order with most recent order listed first
 - Sort the users in User Permissions panel by their roles, ascending order. Admin users listed first
@@ -3006,7 +3022,7 @@
   const users = await User.find({ _id: { $ne: userId } }).sort({ role: 'asc' });
   ```
 
-**2. Formatting Dates**
+### [38. Formatting dates](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/bf4d3ecd3c9b4f8a23bdba5a52dc2af70c3b9a9b?ts=2)
 - Let's format all of the dates in a user-friendly readable format. We can achieve this by writing a utility function and pass in our dates to the function
 - In utils/formatDate.js file:
   - Write a formatDate function to format a date. This function takes a date as a parameter
@@ -3018,7 +3034,7 @@
 - Import and use the formatDate function on our dates in AccountHeader.js, AccountOrders.js, and AccountPermissions.js components
   - Example: `<Table.Cell>{formatDate(user.createdAt)}</Table.Cell>`
 
-**3. Cascade Delete upon Document Removal**
+### [39. Cascade delete upon document removal: for product](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/f9e77026d415f297b2caf868f2c75d198dffb8f8?ts=2)
 - A cascade delete is when you delete a given document, you want to remove all the places where you have references
 - For example, when we delete a product, we want to remove the product in all carts
 - In pages/api/product.js file:
@@ -3048,6 +3064,10 @@
     }
   }
   ```
+
+### [40. Cleanup files](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/14c1b668d649a67032b1d42e364f2b71138877c1?ts=2)
+
+### [Fix pagination for product list error](https://github.com/sungnga/nextjs-furniture-boutique-app/commit/606e45f16ee494cc5c289900ca4d140cb02564e9?ts=2)
 
 
 ### PRODUCTION DEPLOYMENT TO VERCEL
